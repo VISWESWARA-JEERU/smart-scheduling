@@ -1,14 +1,21 @@
+import os
 import pandas as pd
 import psycopg2
 import openpyxl
-df = pd.read_excel("ai_call_metrices.xlsx",engine="openpyxl")
+from dotenv import load_dotenv
+
+load_dotenv()
+
+password = os.getenv("DB_PASSWORD")
+
+df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx",engine="openpyxl")
 
 conn = psycopg2.connect(
-    host="localhost",
-    database="smart_scheduling_db",
-    user="postgres",
-    password="1234",
-    port="5432"
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    port=os.getenv("DB_PORT")
 )
 
 cursor = conn.cursor()
@@ -17,27 +24,15 @@ for index, row in df.iterrows():
 
     cursor.execute("""
         INSERT INTO ai_call_metrics (
-            call_id,
-            patient_name,
-            doctor_name,
-            department,
-            call_status,
-            call_duration,
-            appointment_date,
-            city,
-            bill_amount
+            month_name,
+            clinic_name,
+            user_request
         )
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        VALUES (%s,%s,%s)
     """, (
-        row['call_id'],
-        row['patient_name'],
-        row['doctor_name'],
-        row['department'],
-        row['call_status'],
-        row['call_duration'],
-        row['appointment_date'],
-        row['city'],
-        row['bill_amount']
+        row['month_name'],
+        row['clinic_name'], 
+        row['user_request']
     ))
 
 conn.commit()
