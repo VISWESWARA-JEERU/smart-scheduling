@@ -1,13 +1,11 @@
 import os
+from pathlib import Path
+
 import pandas as pd
 import psycopg2
-import openpyxl
-from dotenv import load_dotenv
-
+from dotenv import load_dotenv   
 load_dotenv()
-
 password = os.getenv("DB_PASSWORD")
-
 df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx",engine="openpyxl")
 
 conn = psycopg2.connect(
