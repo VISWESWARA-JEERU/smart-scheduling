@@ -1,12 +1,20 @@
-import os
-from pathlib import Path
-
-import pandas as pd
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
-from dotenv import load_dotenv   
+import os
+from dotenv import load_dotenv
+
 load_dotenv()
-password = os.getenv("DB_PASSWORD")
-df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx",engine="openpyxl")
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 conn = psycopg2.connect(
     host=os.getenv("DB_HOST"),
@@ -16,38 +24,53 @@ conn = psycopg2.connect(
     port=os.getenv("DB_PORT")
 )
 
-cursor = conn.cursor()
+# @app.get("/api/metrics")
+# def get_metrics():
 
-for index, row in df.iterrows():
+#     cursor = conn.cursor()
+
+#     cursor.execute("""
+#         SELECT month_name, clinic_name, user_request
+#         FROM ai_call_metrics
+#     """)
+
+#     rows = cursor.fetchall()
+
+#     result = []
+
+#     for row in rows:
+#         result.append({
+#             "month_name": row[0],
+#             "clinic_name": row[1],
+#             "user_request": row[2]
+#         })
+@app.get("/api/metrics")
+def get_metrics():
+
+    cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO ai_call_metrics (
+        SELECT 
             month_name,
-            clinic_name,
-            user_request
-        )
-        VALUES (%s,%s,%s)
-    """, (
-        row['month_name'],
-        row['clinic_name'], 
-        row['user_request']
-    ))
+            COUNT(user_request) AS request_count
+        FROM ai_call_metrics
+        GROUP BY month_name
+        ORDER BY month_name
+    """)
 
-conn.commit()
+    rows = cursor.fetchall()
 
-print("Data inserted successfully!")
+    result = []
 
-cursor.close()
-conn.close()
+    for row in rows:
 
+        result.append({
+            "month_name": row[0],
+            "request_count": row[1]
+        })
 
+    
 
+    cursor.close()
 
-
-
-
-
-
-
-
-
+    return result
