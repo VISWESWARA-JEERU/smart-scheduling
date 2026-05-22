@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 password = os.getenv("DB_PASSWORD")
 df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx",engine="openpyxl")
+#df = pd.read_csv("ai_call_metrics.csv",engine= "openpyxl") # Use this line if you have the data in CSV format instead of Excel
 
 conn = psycopg2.connect(
     host=os.getenv("DB_HOST"),

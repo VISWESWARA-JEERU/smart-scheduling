@@ -1,39 +1,61 @@
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# import psycopg2
-# import os
-# import database
+#from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+#import psycopg2
 
-# from database import sessionlocal 
-# from dotenv import load_dotenv
-# import  database_models 
-# import  models
-# load_dotenv()
 
-# app = FastAPI()
+from database import sessionlocal ,engine
+#from dotenv import load_dotenv
+import  database_models 
+from  database_models import Base,ai_call_metrics
+#load_dotenv()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
+app = FastAPI()
+
+database_models.Base.metadata.create_all(bind=engine)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# conn = psycopg2.connect(
+#     host=os.getenv("DB_HOST"),
+#     database=os.getenv("DB_NAME"),
+#     user=os.getenv("DB_USER"),
+#     password=os.getenv("DB_PASSWORD"),
+#     port=os.getenv("DB_PORT")
 # )
+#conn = sessionlocal()
+def get_db():
+    db = sessionlocal()
+    try:
+        yield db
+    finally:
+        db.close() 
 
-# # conn = psycopg2.connect(
-# #     host=os.getenv("DB_HOST"),
-# #     database=os.getenv("DB_NAME"),
-# #     user=os.getenv("DB_USER"),
-# #     password=os.getenv("DB_PASSWORD"),
-# #     port=os.getenv("DB_PORT")
-# # )
-# #conn = sessionlocal()
+@app.get("/api/metrics")
+def get_metrics():
+    db:sessionlocal= sessionlocal()
+    metrics = db.query(database_models.ai_call_metrics).all()
 
+    result = []
+
+    for metric in metrics:
+        result.append({
+            "month_name": metric.month_name,
+            "clinic_name": metric.clinic_name,
+            "user_request": metric.user_request
+        })   
+    return result
 
 # @app.get("/api/metrics")
 # def get_metrics():
 
-#     cursor = conn.cursor()
+#     cursor = db.cursor()
 
 #     cursor.execute("""
 #         SELECT month_name, clinic_name, user_request

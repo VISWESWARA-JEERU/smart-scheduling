@@ -60,7 +60,8 @@ function RequestTypeChart({ data }) {
 
               font: {
                 weight: "bold",
-                size: 12
+                size: 12,
+              
               },
 
               formatter: (value) => {
