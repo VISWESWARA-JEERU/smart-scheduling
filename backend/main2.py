@@ -3,7 +3,7 @@ from fastapi import FastAPI,Depends,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import sessionlocal ,engine
 import  database_models 
-from  database_models import Base, Aicallmetrics
+from  database_models import  Aicallmetrics
 from sqlalchemy import select,func,desc,extract
 from datetime import datetime
 
