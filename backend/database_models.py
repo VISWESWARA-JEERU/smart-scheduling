@@ -1,12 +1,13 @@
-from sqlalchemy import Column, Integer,String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import  String,Integer, Column,Date
+from sqlalchemy.orm import Mapped, mapped_column, declarative_base
 
 Base = declarative_base()
 
-class ai_call_metrics(Base):
+class Aicallmetrics(Base):
 
-    __table__ = "ai_call_metrics"
-    month_name = Column(String)
-    clinic_name = Column(String)
-    user_request = Column(String)
+    __tablename__ = "ai_call_metrics"
+    id = Column(Integer, primary_key=True, index=True)
+    month_name: Mapped[Date] = mapped_column(Date)
+    clinic_name: Mapped[str] = mapped_column(String)
+    user_request: Mapped[str] = mapped_column(String)
 

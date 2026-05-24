@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-
-class ai_call_mertics(BaseModel):
+from datetime import date
+class Aicallmetrics(BaseModel):
     
-    month_name:str
+    month_name:date
     clinic_name:str
-    user_request:str
+    user_request: str

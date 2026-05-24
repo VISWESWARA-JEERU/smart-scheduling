@@ -1,45 +1,40 @@
-import os
-from pathlib import Path
 
+from database import engine, sessionlocal 
+from database_models import Base,Aicallmetrics
 import pandas as pd
-import psycopg2
-from dotenv import load_dotenv   
-load_dotenv()
-password = os.getenv("DB_PASSWORD")
-df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx",engine="openpyxl")
-#df = pd.read_csv("ai_call_metrics.csv",engine= "openpyxl") # Use this line if you have the data in CSV format instead of Excel
 
-conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    port=os.getenv("DB_PORT")
-)
+#df = pd.read_excel("Worksheet in EzMedTech - AI Agent Metrics Project.xlsx")
+df = pd.read_csv("Worksheet in EzMedTech - AI Agent Metrics Project.csv") 
+# Use this line if you have the data in CSV format instead of Excel
 
-cursor = conn.cursor()
+Base.metadata.create_all(bind=engine)
 
+
+session = sessionlocal()
 for index, row in df.iterrows():
+    metric = Aicallmetrics(
+        month_name=row['month_name'],
+        clinic_name=row['clinic_name'],
+        user_request=row['user_request']
+    )
+    session.add(metric) 
 
-    cursor.execute("""
-        INSERT INTO ai_call_metrics (
-            month_name,
-            clinic_name,
-            user_request
-        )
-        VALUES (%s,%s,%s)
-    """, (
-        row['month_name'],
-        row['clinic_name'], 
-        row['user_request']
-    ))
+session.commit()
+print("data inserted successfully")
 
-conn.commit()
+# print_metrics = session.query(Aicallmetrics).all()
+# for metr in print_metrics:
+#     print(metr.month_name,metr.month_name,metr.user_request)
 
-print("Data inserted successfully!")
+session.close()
 
-cursor.close()
-conn.close()
+
+ 
+
+
+
+
+
 
 
 

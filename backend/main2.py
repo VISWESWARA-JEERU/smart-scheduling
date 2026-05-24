@@ -38,8 +38,8 @@ def get_db():
         db.close() 
 
 @app.get("/api/metrics")
-def get_metrics():
-    db:sessionlocal= sessionlocal()
+def get_metrics( db= sessionlocal()):
+   
     metrics = db.query(database_models.ai_call_metrics).all()
 
     result = []
