@@ -11,8 +11,8 @@ password=os.getenv("DB_PASSWORD")
 port=os.getenv("DB_PORT")
 
 db_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-
 #db_url = 'postgresql://postgres:1234@localhost:5432/ai_metrics_db'
+
 engine = create_engine(db_url)
 
 sessionlocal = sessionmaker(autocommit = False, autoflush=False,bind=engine)

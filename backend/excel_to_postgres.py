@@ -21,11 +21,6 @@ for index, row in df.iterrows():
 
 session.commit()
 print("data inserted successfully")
-
-# print_metrics = session.query(Aicallmetrics).all()
-# for metr in print_metrics:
-#     print(metr.month_name,metr.month_name,metr.user_request)
-
 session.close()
 
 

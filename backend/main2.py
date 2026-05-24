@@ -1,14 +1,11 @@
-#from dotenv import load_dotenv
-from fastapi import FastAPI
+
+from fastapi import FastAPI,Depends,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-#import psycopg2
-
-
 from database import sessionlocal ,engine
-#from dotenv import load_dotenv
 import  database_models 
-from  database_models import Base,ai_call_metrics
-#load_dotenv()
+from  database_models import Base, Aicallmetrics
+from sqlalchemy import select,func,desc,extract
+from datetime import datetime
 
 app = FastAPI()
 
@@ -22,14 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# conn = psycopg2.connect(
-#     host=os.getenv("DB_HOST"),
-#     database=os.getenv("DB_NAME"),
-#     user=os.getenv("DB_USER"),
-#     password=os.getenv("DB_PASSWORD"),
-#     port=os.getenv("DB_PORT")
-# )
-#conn = sessionlocal()
+
+@app.get("/")
+def read_root():    
+    return {"message": "Welcome to the AI Call Metrics API!"}
+
 def get_db():
     db = sessionlocal()
     try:
@@ -37,75 +31,47 @@ def get_db():
     finally:
         db.close() 
 
+
+# @app.get("/")
+# def read_root(db= sessionlocal()):    
+#     return {"message": "Welcome to the AI Call Metrics API!"}
+
 @app.get("/api/metrics")
-def get_metrics( db= sessionlocal()):
+def get_metrics( db= Depends(get_db)):
    
-    metrics = db.query(database_models.ai_call_metrics).all()
-
+    #metrics = db.query(database_models.Aicallmetrics).all()
+    stmt = select(Aicallmetrics)
+    metrics = db.scalars(stmt).all()
     result = []
-
+    
+   
     for metric in metrics:
+        short_month = metric.month_name.strftime("%b")
         result.append({
-            "month_name": metric.month_name,
+             "id": metric.id,
+            "month_name": short_month,
             "clinic_name": metric.clinic_name,
             "user_request": metric.user_request
         })   
     return result
 
-# @app.get("/api/metrics")
-# def get_metrics():
 
-#     cursor = db.cursor()
-
-#     cursor.execute("""
-#         SELECT month_name, clinic_name, user_request
-#         FROM ai_call_metrics
-#     """)
-
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-#         result.append({
-#             "month_name": row[0],
-#             "clinic_name": row[1],
-#             "user_request": row[2]
-#         })   
-# # @app.get("/api/metrics")
-# # def get_metrics():
-
-# #     cursor = conn.cursor()
-
-# #     cursor.execute("""
-# #         SELECT 
-# #             month_name,
-# #             COUNT(user_request) AS request_count
-# #         FROM ai_call_metrics
-# #         GROUP BY month_name
-# #         ORDER BY month_name
-# #     """)
-
-# #     rows = cursor.fetchall()
-
-# #     result = []
-
-# #     for row in rows:
-
-# #         result.append({
-# #             "month_name": row[0],
-# #             "request_count": row[1]
-# #         })
-
-#     cursor.close()
-
-#     return result
-
-
-
-# @app.get("/api/monthly-requests")
-# def monthly_requests():
-
+@app.get("/api/monthly-requests")
+def monthly_requests(db= Depends(get_db)):
+      stmt = (select(Aicallmetrics.month_name,
+            func.count(Aicallmetrics.user_request).label('request_count'))
+            .group_by(Aicallmetrics.month_name)
+            .order_by(Aicallmetrics.month_name))
+      rows = db.execute(stmt).mappings().all()
+      results =[]
+      for row in rows:
+            short_month = row.month_name.strftime("%b")
+            results.append({
+                'month_name':short_month,
+                'request_count':row.request_count
+            })
+    
+      return results
 #     cursor = conn.cursor()
 
 #     cursor.execute("""
@@ -132,37 +98,39 @@ def get_metrics( db= sessionlocal()):
 
 #     return result
 
-# @app.get("/api/clinic-requests")
-# def clinic_requests():
+@app.get("/api/clinic-requests")
+def clinic_requests( db = Depends(get_db)):
+        
+        stmt = (select(Aicallmetrics.clinic_name,
+               (func.count(Aicallmetrics.user_request).label("total_requests")))
+               .group_by(Aicallmetrics.clinic_name)
+               .order_by(desc('total_requests')))
+        rows = db.execute(stmt).mappings().all()
+        
 
-#     cursor = conn.cursor()
+        results =[]
+        for row in rows:
+             results.append({
+                  "clinic_name": row.clinic_name,
+                  "total_requests":row.total_requests
+             })    
+        return results
+    
 
-#     cursor.execute("""
-#         SELECT
-#             clinic_name,
-#             COUNT(user_request) AS total_requests
-#         FROM ai_call_metrics
-#         GROUP BY clinic_name
-#         ORDER BY total_requests DESC
-#     """)
+@app.get("/api/request-types")
+def request_types(db = Depends(get_db)):
+      
+      stmt = select(Aicallmetrics.user_request,
+             func.count().label('total')).group_by(Aicallmetrics.user_request)
+      request_types_data = db.execute(stmt).mappings().all()
+      results = []
+      for row in request_types_data:
+           results.append({
+                "user_request" : row["user_request"],
+                "total":row["total"]
+           })
+      return results    
 
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-
-#         result.append({
-#             "clinic_name": row[0],
-#             "total_requests": row[1]
-#         })
-
-#     cursor.close()
-
-#     return result
-
-# @app.get("/api/request-types")
-# def request_types():
 
 #     cursor = conn.cursor()
 
@@ -195,11 +163,29 @@ def get_metrics( db= sessionlocal()):
 
 
 
-# # @app.get("/api/filter/month/{month}")
-# # def filter_by_month(month: str):
+@app.get("/api/filter/month/{month}")
+def filter_by_month(month:str,db=Depends(get_db)):
+        try:
+             month_number = datetime.strptime(month.title(),"%b").month
+             
+        except ValueError:
+             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
 
-# #     cursor = conn.cursor()
+        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+                .where(extract('month',Aicallmetrics.month_name)== month_number))
+        
+        rows = db.execute(stmt).mappings().all()
+        results=[]
+        for row in rows:
+         
+            short_month = row.month_name.strftime("%b")
+            results.append({
+                  "month_name": short_month,
+                  "clinic_name": row.clinic_name,
+                  "user_request": row.user_request
+            })
 
+        return results
 # #     cursor.execute("""
 # #         SELECT
 # #             month_name,
@@ -225,10 +211,22 @@ def get_metrics( db= sessionlocal()):
 
 # #     return result
 
-# @app.get("/api/filter/clinic/{clinic}")
-# def filter_by_clinic(clinic: str):
+@app.get("/api/filter/clinic/{clinic}")
+def filter_by_clinic(clinic: str,db=Depends(get_db)):   
+        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+             .where(Aicallmetrics.clinic_name == clinic))   
+        rows = db.execute(stmt).mappings().all()
+        results = []
+        for row in rows:
+            short_month = row.month_name.strftime("%b")
+            results.append({
+                  "month_name": short_month,
+                  "clinic_name": row.clinic_name,
+                  "user_request": row.user_request
+            })
+        return results
 
-#     cursor = conn.cursor()
+
 
 #     cursor.execute("""
 #         SELECT
@@ -255,16 +253,19 @@ def get_metrics( db= sessionlocal()):
 
 #     return result
 
-# @app.get("/api/kpi")
-# def kpi_metrics():
+@app.get("/api/kpi")
+def kpi_metrics(db=Depends(get_db)):
 
-#     cursor = conn.cursor()
-
+    stmt1 = select(func.count(Aicallmetrics.clinic_name.distinct()))
+    total_clinics_count = db.scalar(stmt1)
+   
+    stmt2 = select(func.count()).select_from(Aicallmetrics)
+    total_requests_count= db.scalar(stmt2)
 #     cursor.execute("""
 #         SELECT COUNT(*) FROM ai_call_metrics
 #     """)
 
-#     total_requests = cursor.fetchone()[0]
+#     
 
 #     cursor.execute("""
 #         SELECT COUNT(DISTINCT clinic_name)
@@ -275,7 +276,7 @@ def get_metrics( db= sessionlocal()):
 
 #     cursor.close()
 
-#     return {
-#         "total_requests": total_requests,
-#         "total_clinics": total_clinics
-#     }
+    return {
+        "total_requests": total_requests_count,
+        "total_clinics": total_clinics_count
+    }
