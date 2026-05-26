@@ -8,15 +8,19 @@ import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
 function ClinicChart({ data }) {
+  const sortedData = [...(data || [])].sort(
+    (a, b) => b.total_requests - a.total_requests
+  );
+  const filteredData = sortedData.filter((item) => item.total_requests >= 10);
 
   return (
 
-    <div className="chart-card rounded-xl bg-white p-5 shadow-card">
+    <div className="h-[580px] w-full chart-card rounded-xl bg-white p-5 shadow-card">
       <Bar
         data=
         {
           {
-          labels: data.map(
+          labels: filteredData.map(
             (item) => item.clinic_name
           ),
 
@@ -24,17 +28,17 @@ function ClinicChart({ data }) {
             {
               label: "Total Requests",
          
-              data: data.map(
+              data: sortedData.map(
                 (item) => item.total_requests
               
               ),
               
               backgroundColor:[
-                "rgba(99, 115, 255, 0.6)",
-                "rgba(54, 162, 235, 0.6)",
-                "rgba(255, 205, 86, 0.6)",
-                "rgba(75, 192, 192, 0.6)",
-                "rgba(153, 102, 255, 0.6)",
+                "rgba(243, 103, 9, 0.6)",
+                "rgb(8, 202, 232)",
+                "rgba(21, 250, 13, 0.6)",
+                "rgba(249, 27, 179, 0.94)",
+                "rgba(252, 43, 78, 0.9)",
                ],
 
               borderColor:
@@ -49,6 +53,7 @@ function ClinicChart({ data }) {
         options=
         {{
           responsive: true, 
+          maintainAspectRatio: false,
           plugins:
           {
             legend:{
@@ -90,6 +95,7 @@ function ClinicChart({ data }) {
               title: {
                 display: true,
                 text: "Clinics",
+                color: "black",
                 font: {
                   size: 18,
                   weight: "bold"
@@ -100,7 +106,7 @@ function ClinicChart({ data }) {
                 maxRotation: 30,
                 minRotation: 0,
                 color: "black",
-                font:{size: 16}
+                font:{ size: 18}
               }},
 
               y: {
@@ -109,6 +115,7 @@ function ClinicChart({ data }) {
                 title: {
                   display: true,
                   text: "Number of Requests",
+                  color: "black",
                   font: {
                     size: 18,
                     weight: "bold"  
@@ -117,7 +124,7 @@ function ClinicChart({ data }) {
                  ticks: {
                   stepSize: 500,
                   color: "black",
-                  font:{size: 18}
+                  font:{ size: 18}
                 },
               }
            }

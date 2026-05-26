@@ -280,3 +280,72 @@ def kpi_metrics(db=Depends(get_db)):
         "total_requests": total_requests_count,
         "total_clinics": total_clinics_count
     }
+
+@app.get("/api/clinic-requests/month/{month}")
+def clinic_requests_by_month(month:str,db=Depends(get_db)):     
+        try:
+             month_number = datetime.strptime(month.title(),"%b").month
+             
+        except ValueError:
+             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
+
+        stmt = (select(Aicallmetrics.clinic_name,
+               func.count(Aicallmetrics.user_request).label("total_requests"))
+               .where(extract('month',Aicallmetrics.month_name)== month_number)
+               .group_by(Aicallmetrics.clinic_name)
+               .order_by(desc('total_requests')))
+        rows = db.execute(stmt).mappings().all()
+        
+
+        results =[]
+        for row in rows:
+             results.append({
+                  "clinic_name": row.clinic_name,
+                  "total_requests":row.total_requests
+             })    
+        return results
+
+
+# --------------------------------------------------------------------------------
+#                             Report Generation Endpoints
+# -----------------------------------------------------------------------------
+
+
+
+@app.get("/api/reports")
+def get_reports(
+    clinic: str = None,
+    month: str = None,
+    request_type: str = None,
+    db=Depends(get_db)
+):
+
+    stmt = select(
+        Aicallmetrics.month_name,
+        Aicallmetrics.clinic_name,
+        Aicallmetrics.user_request
+    )
+
+    if clinic:
+        stmt = stmt.where(
+            Aicallmetrics.clinic_name == clinic
+        )
+
+    if month:
+        stmt = stmt.where( func.date_format(Aicallmetrics.month_name,"%b") == month)
+
+    rows = db.execute(stmt).mappings().all()
+
+    results = []
+
+    for row in rows:
+
+        short_month = row.month_name.strftime("%b")
+
+        results.append({
+            "month_name": short_month,
+            "clinic_name": row.clinic_name,
+            "user_request": row.user_request
+        })
+
+    return results

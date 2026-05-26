@@ -4,18 +4,14 @@ import "chart.js/auto";
 import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
-function MonthlyChart({ data }) {
+function MonthlyChart({ data, onMonthClick }) {
 
   return (
 
-    <div className="chart-card rounded-xl bg-white p-5 shadow-card">
+    <div className="w-full h-[580px] chart-card rounded-xl bg-white p-6 shadow-card ">
       <Bar
         data={{
-          labels: data.map((item) => item.month_name ),font: {
-            size: 16,
-            weight: "bold"
-          },
-        
+          labels: data.map((item) => item.month_name),
 
           datasets: [
             {
@@ -35,40 +31,49 @@ function MonthlyChart({ data }) {
               // rgb(54, 162, 235)
 
               // ]
-               backgroundColor: "rgba(75, 192, 192, 0.6)",
-               hoverBackgroundColor: "rgba(239, 32, 32, 0.8)",
-               borerRadius: 5
+              backgroundColor: "rgba(7, 76, 237, 0.6)",
+              hoverBackgroundColor: "rgba(239, 32, 32, 0.8)",
+              borerRadius: 5
             }
           ]
         }}
         plugins={[ChartDataLabels]}
         options={{
-            responsive: true, 
 
-            plugins:
-            {
-              legend:{
-                display:true
-              },
-              title:{
-              display:true,
-              text:"Monthly Requests",
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              const index = elements[0].index;
+              const selectedMonth = data[index].month_name;
+
+              onMonthClick(selectedMonth);
+            }
+          },
+          plugins:
+          {
+            legend: {
+              display: true
+            },
+            title: {
+              display: true,
+              text: "Monthly Requests",
               font: {
                 size: 18
               }
-               },
+            },
             tooltip: {
-            enabled: true,
-            // callbacks: {
-            //   label: function(context) {
-            //     return context.parsed.y + " requests";  },    
-            //   }
-             },
+              enabled: true,
+              // callbacks: {
+              //   label: function(context) {
+              //     return context.parsed.y + " requests";  },    
+              //   }
+            },
             datalabels: {
               // display: true,
               anchor: "end",
               align: "top",
-              color: "black", 
+              color: "black",
               font: {
                 weight: "bold",
                 size: 18
@@ -76,19 +81,20 @@ function MonthlyChart({ data }) {
               },
               formatter: (value) => {
                 if (value > 10)
-                 return value;
-                }
+                  return value;
+              }
             }
           },
 
           scales: {
-            x:{
+            x: {
               title: {
                 display: true,
-                text: "Month",
+                text: "Months",
+                color: "black",
                 font: {
-                  size: 16,
-                  weight: "bold"
+                  size: 18,
+                  weight: "bold",
                 }
               },
               ticks: {
@@ -97,15 +103,17 @@ function MonthlyChart({ data }) {
                 minRotation: 0,
                 color: "black",
                 fontstyle: "bold",
-                font: {size: 18}
-            }},
+                font: { size: 18 }
+              }
+            },
             y: {
               beginAtZero: true,
               title: {
                 display: true,
                 text: "Number of Requests",
+                color: "black",
                 font: {
-                  size: 16,
+                  size: 18,
                   weight: "bold"
                 }
               },
@@ -113,17 +121,17 @@ function MonthlyChart({ data }) {
                 autoSkip: false,
                 stepSize: 500,
                 color: "black",
-                fontstyle: "bold",
-                font: {size: 18}
+                font: { size: 18 }
+
               }
             }
           }
-        
+
 
         }}
-      
+
       />
-      
+
 
     </div>
 
