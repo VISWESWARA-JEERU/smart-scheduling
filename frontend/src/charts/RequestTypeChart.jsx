@@ -10,10 +10,8 @@ function RequestTypeChart({ data }) {
 
   return (
 
-    <div className="chart-card">
-
-      <h2>Request Types</h2>
-      
+    <div className="chart-card rounded-xl bg-white p-5 shadow-card">
+      <h2 className="mb-4 text-xl font-semibold text-slate-700">Request Types</h2>
       <Doughnut
         data={{
           labels: data.map(
@@ -23,7 +21,7 @@ function RequestTypeChart({ data }) {
           datasets: [
             {
               label: "Requests",
-
+          
               data: data.map(
                 (item) => { 
                   console.log(item.total);
@@ -56,17 +54,18 @@ function RequestTypeChart({ data }) {
 
             datalabels: {
 
-              color: "white",
+              color: "black",
 
               font: {
                 weight: "bold",
-                size: 12,
+                size: 18,
+
               
               },
 
-              formatter: (value) => {
-                return value;
-              }
+              // formatter: (value) => {
+              //   return value;
+              // }
 
             }
 

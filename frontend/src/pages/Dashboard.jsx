@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-//import "../index.css";
-import "../App.css";
+
 import API from "../services/api";
+
+
+import "../App.css";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import KPICards from "../components/KPICards";
-import MonthlyChart from "../components/MonthlyChart";
-import ClinicChart from "../components/ClinicChart";
-import RequestTypeChart from "../components/RequestTypeChart";
+import MonthlyChart from "../charts/MonthlyChart";
+import ClinicChart from "../charts/ClinicChart";
+import RequestTypeChart from "../charts/RequestTypeChart";
+
 //import DataTable from "../components/DataTable";
 //import Filters from "../components/Filters";
 
@@ -17,16 +20,20 @@ function Dashboard() {
   const [monthlyData, setMonthlyData] = useState([]);
   const [clinicData, setClinicData] = useState([]);
   const [requestTypeData, setRequestTypeData] = useState([]);
-  const [tableData, setTableData] = useState([]);
+  // const [tableData, setTableData] = useState([]);
+
   const [kpiData, setKpiData] = useState({});
 
   useEffect(() => {
-
     fetchDashboardData();
-
   }, []);
 
   const fetchDashboardData = async () => {
+
+
+
+
+
 
     try {
 
@@ -39,8 +46,8 @@ function Dashboard() {
       const requestTypeRes =
         await API.get("/request-types");
 
-      const metricsRes =
-        await API.get("/metrics");
+      await API.get("/metrics");
+
 
       const kpiRes =
         await API.get("/kpi");
@@ -51,7 +58,8 @@ function Dashboard() {
 
       setRequestTypeData(requestTypeRes.data);
 
-      setTableData(metricsRes.data);
+      // setTableData(metricsRes.data);
+
 
       setKpiData(kpiRes.data);
 
@@ -83,38 +91,22 @@ function Dashboard() {
 
   return (
 
-    <div className="dashboard">
-
+    <div className="min-h-screen w-full bg-slate-100">
       <Navbar />
 
-      <div className="dashboard-layout">
-
+      <div className="flex w-full">
         <Sidebar />
 
-        <div className="dashboard-content">
+        <div className="flex-1 p-6 sm:p-7">
+          <KPICards data={kpiData} requestData={requestTypeData} />
 
-          <KPICards data={kpiData} requestData={requestTypeData}/>
-
-          {/* <Filters onFilter={filterByMonth} /> */}
-
-          <div className="chart-grid">
-
+          <div className="mb-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             <MonthlyChart data={monthlyData} />
-
             <ClinicChart data={clinicData} />
-
-            <RequestTypeChart
-              data={requestTypeData}
-            />
-
+            <RequestTypeChart data={requestTypeData} />
           </div>
-
-
-
         </div>
-
       </div>
-
     </div>
   );
 }
