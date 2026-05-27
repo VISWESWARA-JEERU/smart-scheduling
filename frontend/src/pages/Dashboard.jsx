@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import  "../index.css";
+import "../index.css";
 
 //import "../App.css";
 
@@ -19,33 +19,65 @@ function Dashboard() {
   const [monthlyData, setMonthlyData] = useState([]);
   const [clinicData, setClinicData] = useState([]);
   const [requestTypeData, setRequestTypeData] = useState([]);
-  // const [tableData, setTableData] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  // const[selectedYear,setSelectedYear]= useState([]);
+  // const [selectedMonth, setSelectedMonth] = useState(null);
+  const currentDate = new Date();
+
+  const [selectedMonth, setSelectedMonth] = useState(
+    currentDate.getMonth() + 1
+  );
+
+  const [selectedYear, setSelectedYear] = useState(
+    currentDate.getFullYear()
+  );
 
   const [kpiData, setKpiData] = useState({});
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   const fetchDashboardData = async () => {
 
     try {
 
       const monthlyRes =
-        await API.get("/monthly-requests");
+        await API.get("/monthly-requests", {
+          params: {
+            year: selectedYear,
+          },
+        });
 
       const clinicRes =
-        await API.get("/clinic-requests");
+        await API.get("/clinic-requests", {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+        });
+      // API.get("/clinic-requests");
+
 
       const requestTypeRes =
-        await API.get("/request-types");
+        await API.get("/request-types", {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+        }
+        );
 
       await API.get("/metrics");
 
 
       const kpiRes =
-        await API.get("/kpi");
+        await API.get("/kpi", {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+        }
+        );
 
       setMonthlyData(monthlyRes.data);
 
@@ -84,44 +116,143 @@ function Dashboard() {
 
   };
 
-const handleMonthClick = async (month) => {
-  try {
-    setSelectedMonth(month);
+  // const handleMonthClick = async (month) => {
+  //   try {
+  //     setSelectedMonth(month);
 
-    const response = await API.get(`/clinic-requests/month/${month}`);
+  //     const response = await API.get(`/clinic-requests/month/${month}`);
 
-    setClinicData(response.data);
-  } catch (error) {
-    console.log(error);
-  }
-};
+  //     setClinicData(response.data);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
 
 
   return (
     <>
-    
-    <div className=" p-0 m-0 min-h-screen w-full bg-slate-100">
-      <Navbar />
-     
-      <div className="flex w-full">
-        <Sidebar />
 
-        <div className="flex-1 p-6 sm:p-7">
-          <KPICards data={kpiData} requestData={requestTypeData} />
+      <div className=" p-0 m-0 min-h-screen w-full bg-slate-100">
+        <Navbar />
 
-          <div className=" w-full grid md:grid-cols-1 gap-3 lg:grid-cols-2">
-            <MonthlyChart data={monthlyData} onMonthClick={handleMonthClick}/>
-            {/* <Filters onFilter={filterByMonth} /> */}
-            <ClinicChart data={clinicData} title={selectedMonth ?`Clinic Requests -${selectedMonth}`:"Clinic Requests"} />
-            <div className=" lg:col-span-2">
-              <RequestTypeChart data={requestTypeData} />
-              
-            </div> 
+        <div className="flex w-full">
+
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main Content */}
+          <div className="flex-2 p-6 sm:p-7">
+          <div className="w-full flex flex-row gap-8">
+            {/* Dashboard Filters */}
+            <div className=" w-1/2 mb-6 flex flex-wrap items-center gap-18 rounded-2xl bg-white p-5 shadow-lg">
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  Dashboard Filters
+                </h2>
+
+                <p className="text-sm text-slate-500">
+                  Filter dashboard analytics by month and year
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-8">
+
+                {/* Month Filter */}
+                <div className="flex flex-col ">
+                  <label className="mb-1 text-sm font-semibold text-slate-600">
+                    Month
+                  </label>
+
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) =>
+                      setSelectedMonth(Number(e.target.value))
+                    }
+                    className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  >
+                    <option value={1}>January</option>
+                    <option value={2}>February</option>
+                    <option value={3}>March</option>
+                    <option value={4}>April</option>
+                    <option value={5}>May</option>
+                    <option value={6}>June</option>
+                    <option value={7}>July</option>
+                    <option value={8}>August</option>
+                    <option value={9}>September</option>
+                    <option value={10}>October</option>
+                    <option value={11}>November</option>
+                    <option value={12}>December</option>
+                  </select>
+                </div>
+
+                {/* Year Filter */}
+                <div className="flex flex-col">
+                  <label className="mb-1 text-sm font-semibold text-slate-600">
+                    Year
+                  </label>
+
+                  <select
+                    value={selectedYear}
+                    onChange={(e) =>
+                      setSelectedYear(Number(e.target.value))
+                    }
+                    className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  >
+
+                    <option value={2025}>2025</option>
+                    <option value={2026}>2026</option>
+                  </select>
+                </div>
+              </div>
+             </div>
+             {/* export butons */}
+             <div className=" w-1/2 mb-6 flex flex-wrap items-center gap-18 rounded-2xl bg-white p-5 shadow-lg">
+             <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  Dashboard Filters
+                </h2>
+
+                <p className="text-sm text-slate-500">
+                  Filter dashboard analytics by month and year
+                </p>
+              </div>
+              <button className="rounded-lg px-4 py-2 text-white bg-blue-600 font-medium hover:bg-green-600 transition-colors">Export CSV</button>
+              <button className="rounded-lg px-4 py-2 text-white bg-blue-600 font-medium hover:bg-green-600 transition-colors">Export PDF</button>
+             </div>
+            </div>
+           
+
+            {/* KPI Cards */}
+            <div className="mb-6">
+              <KPICards
+                data={kpiData}
+                requestData={requestTypeData}
+              />
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+
+              <MonthlyChart data={monthlyData} />
+
+              <ClinicChart
+                data={clinicData}
+                title={`Clinic Requests - ${selectedMonth}/${selectedYear}`}
+              />
+
+              <div className="lg:col-span-2 h-[900px] w-[1100px]">
+                <RequestTypeChart data={requestTypeData} />
+              </div>
+
+            </div>
+
           </div>
         </div>
+
+
       </div>
-    </div>
     </>
   );
 }

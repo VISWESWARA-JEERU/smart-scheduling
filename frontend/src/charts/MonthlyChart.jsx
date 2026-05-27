@@ -4,11 +4,14 @@ import "chart.js/auto";
 import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
-function MonthlyChart({ data, onMonthClick }) {
+// onMonthClick
+
+function MonthlyChart({ data }) {  
 
   return (
 
     <div className="w-full h-[580px] chart-card rounded-xl bg-white p-6 shadow-card ">
+      <h2 className="text-2xl bg-blue">data.year</h2>
       <Bar
         data={{
           labels: data.map((item) => item.month_name),
@@ -42,14 +45,14 @@ function MonthlyChart({ data, onMonthClick }) {
 
           responsive: true,
           maintainAspectRatio: false,
-          onClick: (event, elements) => {
-            if (elements.length > 0) {
-              const index = elements[0].index;
-              const selectedMonth = data[index].month_name;
+          // onClick: (event, elements) => {
+          //   if (elements.length > 0) {
+          //     const index = elements[0].index;
+          //     const selectedMonth = data[index].month_name;
 
-              onMonthClick(selectedMonth);
-            }
-          },
+          //     onMonthClick(selectedMonth);
+          //   }
+          // },
           plugins:
           {
             legend: {

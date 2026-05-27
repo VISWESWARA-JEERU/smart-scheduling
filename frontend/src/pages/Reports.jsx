@@ -8,18 +8,29 @@ import ReportFilters from "../components/reports/ReportFilters";
 function Reports() {
 
    const [reportData, setReportData] = useState([]);
+   const [tableData, setTableData] = useState([]);
+
+
+
     useEffect(() => {
        fetchReportsData();
      }, []);
     
+
+
+
      const fetchReportsData = async () => {
        try {
-         const reportsdata = await API.get("/api/reports");
-         setReportData(reportsdata.data);
+         const reportsdata = await API.get("/reports");
+        // const tabledata = await API.get("/api/report-table");
+      
+
 
        } catch (error) {
          console.error("Error fetching reports data:", error);
        }
+       setReportData(reportsdata.data);
+       // setTableData(tabledata.data);
      };
 
 

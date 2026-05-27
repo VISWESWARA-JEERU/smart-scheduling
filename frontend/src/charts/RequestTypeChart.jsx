@@ -11,7 +11,7 @@ function RequestTypeChart({ data }) {
 
   return (
 
-    <div className=" h-[550px] w-[1000px] p-5 chart-card rounded-xl bg-white shadow-card">
+    <div className=" h-[600px] w-[1000px] p-5 chart-card rounded-xl bg-white shadow-card">
       <h2 className="mb-4 text-xl font-semibold text-slate-700">Request Types</h2>
       <Doughnut
         data={{

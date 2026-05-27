@@ -88,7 +88,7 @@ function ClinicChart({ data }) {
             }
           
            
-        },
+          },
 
           scales: { 
             x:{
@@ -125,7 +125,7 @@ function ClinicChart({ data }) {
                   stepSize: 500,
                   color: "black",
                   font:{ size: 18}
-                },
+                }
               }
            }
         
