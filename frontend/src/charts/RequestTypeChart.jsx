@@ -30,7 +30,7 @@ function RequestTypeChart({ data }) {
               backgroundColor: [
                 "#36A2EB",
                 "#fcec08",
-                "#f50a26",
+                "#f50a25fd",
                 "#4BC0C0",
                 "#9966FF",
                 "#FF9F40",

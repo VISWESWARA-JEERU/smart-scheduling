@@ -1,11 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "../src/index.css"
 import Dashboard from "./pages/Dashboard";
- import Reports from "./pages/Reports";
+import Reports from "./pages/Reports";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/reports" element={<Reports />} />
