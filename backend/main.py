@@ -1,146 +1,217 @@
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# import psycopg2
-# import os
-# import database
 
-# from database import sessionlocal 
-# from dotenv import load_dotenv
-# import  database_models 
-# import  models
-# load_dotenv()
+from fastapi import FastAPI,Depends,HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from database import sessionlocal ,engine
+import  database_models 
+from  database_models import  Aicallmetrics
+from sqlalchemy import select,func,desc,extract
+from datetime import datetime
 
-# app = FastAPI()
+app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+database_models.Base.metadata.create_all(bind=engine)
 
-# # conn = psycopg2.connect(
-# #     host=os.getenv("DB_HOST"),
-# #     database=os.getenv("DB_NAME"),
-# #     user=os.getenv("DB_USER"),
-# #     password=os.getenv("DB_PASSWORD"),
-# #     port=os.getenv("DB_PORT")
-# # )
-# #conn = sessionlocal()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173",
+        "https://your-frontend.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-# @app.get("/api/metrics")
-# def get_metrics():
+@app.get("/")
+def read_root():    
+    return {"message": "Welcome to the AI Call Metrics API!"}
 
-#     cursor = conn.cursor()
+def get_db():
+    db = sessionlocal()
+    try:
+        yield db
+    finally:
+        db.close() 
 
-#     cursor.execute("""
-#         SELECT month_name, clinic_name, user_request
-#         FROM ai_call_metrics
-#     """)
 
-#     rows = cursor.fetchall()
+# @app.get("/")
+# def read_root(db= sessionlocal()):    
+#     return {"message": "Welcome to the AI Call Metrics API!"}
 
-#     result = []
-
-#     for row in rows:
-#         result.append({
-#             "month_name": row[0],
-#             "clinic_name": row[1],
-#             "user_request": row[2]
-#         })   
-# # @app.get("/api/metrics")
-# # def get_metrics():
-
-# #     cursor = conn.cursor()
-
-# #     cursor.execute("""
-# #         SELECT 
-# #             month_name,
-# #             COUNT(user_request) AS request_count
-# #         FROM ai_call_metrics
-# #         GROUP BY month_name
-# #         ORDER BY month_name
-# #     """)
-
-# #     rows = cursor.fetchall()
-
-# #     result = []
-
-# #     for row in rows:
-
-# #         result.append({
-# #             "month_name": row[0],
-# #             "request_count": row[1]
-# #         })
-
-#     cursor.close()
-
-#     return result
-
+@app.get("/api/metrics")
+def get_metrics( db= Depends(get_db)):
+   
+    #metrics = db.query(database_models.Aicallmetrics).all()
+    stmt = select(Aicallmetrics)
+    metrics = db.scalars(stmt).all()
+    result = []
+    
+   
+    for metric in metrics:
+        short_month = metric.month_name.strftime("%b")
+        result.append({
+             "id": metric.id,
+            "month_name": short_month,
+            "clinic_name": metric.clinic_name,
+            "user_request": metric.user_request
+        })   
+    return result
 
 
 # @app.get("/api/monthly-requests")
-# def monthly_requests():
+# def monthly_requests(db= Depends(get_db)):
+#       stmt = (select(Aicallmetrics.month_name,
+#             func.count(Aicallmetrics.user_request).label('request_count'))
+#             .group_by(Aicallmetrics.month_name)
+#             .order_by(Aicallmetrics.month_name))
+#       rows = db.execute(stmt).mappings().all()
+#       results =[]
+#       for row in rows:
+#             short_month = row.month_name.strftime("%b")
+#             results.append({
+#                 'month_name':short_month,
+#                 'request_count':row.request_count
+#             })
+    
+#       return results
 
-#     cursor = conn.cursor()
+@app.get("/api/monthly-requests")
+def monthly_requests(year: int = None, db=Depends(get_db)):
 
-#     cursor.execute("""
-#         SELECT 
-#             month_name,
-#             COUNT(user_request) AS request_count
-#         FROM ai_call_metrics
-#         GROUP BY month_name
-#         ORDER BY month_name
-#     """)
+    stmt = select(
+        extract("month", Aicallmetrics.month_name).label("month"),
+        extract("year", Aicallmetrics.month_name).label("year"),
+        func.count(Aicallmetrics.user_request).label("request_count")
+    )
 
-#     rows = cursor.fetchall()
+    if year:
+        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
 
-#     result = []
+    stmt = (
+        stmt.group_by(
+            extract("month", Aicallmetrics.month_name),
+            extract("year", Aicallmetrics.month_name)
+        )
+        .order_by(extract("month", Aicallmetrics.month_name))
+    )
 
-#     for row in rows:
+    rows = db.execute(stmt).mappings().all()
 
-#         result.append({
-#             "month_name": row[0],
-#             "request_count": row[1]
-#         })
+    results = []
 
-#     cursor.close()
+    for row in rows:
+        month_name = datetime(
+            int(row.year),
+            int(row.month),
+            1
+        ).strftime("%b")
 
-#     return result
+        results.append({
+            "month": int(row.month),
+            "year": int(row.year),
+            "month_name": month_name,
+            "request_count": row.request_count
+        })
+
+    return results
+
+
+
 
 # @app.get("/api/clinic-requests")
-# def clinic_requests():
+# def clinic_requests( db = Depends(get_db)):
+        
+#         stmt = (select(Aicallmetrics.clinic_name,
+#                (func.count(Aicallmetrics.user_request).label("total_requests")))
+#                .group_by(Aicallmetrics.clinic_name)
+#                .order_by(desc('total_requests')))
+#         rows = db.execute(stmt).mappings().all()
+        
 
-#     cursor = conn.cursor()
+#         results =[]
+#         for row in rows:
+#              results.append({
+#                   "clinic_name": row.clinic_name,
+#                   "total_requests":row.total_requests
+#              })    
+#         return results
+@app.get("/api/clinic-requests")
+def clinic_requests(
+    month: int = None,
+    year: int = None,
+    db=Depends(get_db)
+):
 
-#     cursor.execute("""
-#         SELECT
-#             clinic_name,
-#             COUNT(user_request) AS total_requests
-#         FROM ai_call_metrics
-#         GROUP BY clinic_name
-#         ORDER BY total_requests DESC
-#     """)
+    stmt = select(
+        Aicallmetrics.clinic_name,
+        func.count(Aicallmetrics.user_request).label("total_requests")
+    )
 
-#     rows = cursor.fetchall()
+    if month:
+        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
 
-#     result = []
+    if year:
+        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
 
-#     for row in rows:
+    stmt = (
+        stmt.group_by(Aicallmetrics.clinic_name)
+        .order_by(desc("total_requests"))
+    )
 
-#         result.append({
-#             "clinic_name": row[0],
-#             "total_requests": row[1]
-#         })
+    rows = db.execute(stmt).mappings().all()
 
-#     cursor.close()
-
-#     return result
+    return [
+        {
+            "clinic_name": row.clinic_name,
+            "total_requests": row.total_requests
+        }
+        for row in rows
+    ]
+    
 
 # @app.get("/api/request-types")
-# def request_types():
+# def request_types(db = Depends(get_db)):
+      
+#       stmt = select(Aicallmetrics.user_request,
+#              func.count().label('total')).group_by(Aicallmetrics.user_request)
+#       request_types_data = db.execute(stmt).mappings().all()
+#       results = []
+#       for row in request_types_data:
+#            results.append({
+#                 "user_request" : row["user_request"],
+#                 "total":row["total"]
+#            })
+#       return results   
+ 
+@app.get("/api/request-types")
+def request_types(
+    month: int = None,
+    year: int = None,
+    db=Depends(get_db)
+):
+
+    stmt = select(
+        Aicallmetrics.user_request,
+        func.count().label("total")
+    )
+
+    if month:
+        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
+
+    if year:
+        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+
+    stmt = stmt.group_by(Aicallmetrics.user_request)
+
+    rows = db.execute(stmt).mappings().all()
+
+    return [
+        {
+            "user_request": row.user_request,
+            "total": row.total
+        }
+        for row in rows
+    ]
+
 
 #     cursor = conn.cursor()
 
@@ -173,11 +244,29 @@
 
 
 
-# # @app.get("/api/filter/month/{month}")
-# # def filter_by_month(month: str):
+@app.get("/api/filter/month/{month}")
+def filter_by_month(month:str,db=Depends(get_db)):
+        try:
+             month_number = datetime.strptime(month.title(),"%b").month
+             
+        except ValueError:
+             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
 
-# #     cursor = conn.cursor()
+        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+                .where(extract('month',Aicallmetrics.month_name)== month_number))
+        
+        rows = db.execute(stmt).mappings().all()
+        results=[]
+        for row in rows:
+         
+            short_month = row.month_name.strftime("%b")
+            results.append({
+                  "month_name": short_month,
+                  "clinic_name": row.clinic_name,
+                  "user_request": row.user_request
+            })
 
+        return results
 # #     cursor.execute("""
 # #         SELECT
 # #             month_name,
@@ -197,16 +286,70 @@
 # #             "month_name": row[0],
 # #             "clinic_name": row[1],
 # #             "user_request": row[2]
-# #         })
+# @app.get("/api/kpi")
+# def kpi_metrics(db=Depends(get_db)):
+
+#     stmt1 = select(func.count(Aicallmetrics.clinic_name.distinct()))
+#     total_clinics_count = db.scalar(stmt1)
+   
+#     stmt2 = select(func.count()).select_from(Aicallmetrics)
+#     total_requests_count= db.scalar(stmt2)
+#     return {
+#         "total_requests": total_requests_count,
+#         "total_clinics": total_clinics_count
+#     }
+
+@app.get("/api/kpi")
+def kpi_metrics(
+    month: int = None,
+    year: int = None,
+    db=Depends(get_db)
+):
+
+    stmt = select(Aicallmetrics)
+
+    if month:
+        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
+
+    if year:
+        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+
+    subquery = stmt.subquery()
+
+    total_requests_count = db.scalar(
+        select(func.count()).select_from(subquery)
+    )
+
+    total_clinics_count = db.scalar(
+        select(func.count(func.distinct(subquery.c.clinic_name)))
+    )
+
+    return {
+        "total_requests": total_requests_count,
+        "total_clinics": total_clinics_count
+    }
+
 
 # #     cursor.close()
 
 # #     return result
 
-# @app.get("/api/filter/clinic/{clinic}")
-# def filter_by_clinic(clinic: str):
+@app.get("/api/filter/clinic/{clinic}")
+def filter_by_clinic(clinic: str,db=Depends(get_db)):   
+        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+             .where(Aicallmetrics.clinic_name == clinic))   
+        rows = db.execute(stmt).mappings().all()
+        results = []
+        for row in rows:
+            short_month = row.month_name.strftime("%b")
+            results.append({
+                  "month_name": short_month,
+                  "clinic_name": row.clinic_name,
+                  "user_request": row.user_request
+            })
+        return results
 
-#     cursor = conn.cursor()
+
 
 #     cursor.execute("""
 #         SELECT
@@ -233,27 +376,74 @@
 
 #     return result
 
-# @app.get("/api/kpi")
-# def kpi_metrics():
 
-#     cursor = conn.cursor()
 
-#     cursor.execute("""
-#         SELECT COUNT(*) FROM ai_call_metrics
-#     """)
 
-#     total_requests = cursor.fetchone()[0]
+@app.get("/api/clinic-requests/month/{month}")
+def clinic_requests_by_month(month:str,db=Depends(get_db)):     
+        try:
+             month_number = datetime.strptime(month.title(),"%b").month
+             
+        except ValueError:
+             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
 
-#     cursor.execute("""
-#         SELECT COUNT(DISTINCT clinic_name)
-#         FROM ai_call_metrics
-#     """)
+        stmt = (select(Aicallmetrics.clinic_name,
+               func.count(Aicallmetrics.user_request).label("total_requests"))
+               .where(extract('month',Aicallmetrics.month_name)== month_number)
+               .group_by(Aicallmetrics.clinic_name)
+               .order_by(desc('total_requests')))
+        rows = db.execute(stmt).mappings().all()
+        
 
-#     total_clinics = cursor.fetchone()[0]
+        results =[]
+        for row in rows:
+             results.append({
+                  "clinic_name": row.clinic_name,
+                  "total_requests":row.total_requests
+             })    
+        return results
 
-#     cursor.close()
 
-#     return {
-#         "total_requests": total_requests,
-#         "total_clinics": total_clinics
-#     }
+# --------------------------------------------------------------------------------
+#                             Report Generation Endpoints
+# -----------------------------------------------------------------------------
+
+
+
+@app.get("/api/reports")
+def get_reports(
+    clinic: str = None,
+    month: str = None,
+    request_type: str = None,
+    db=Depends(get_db)
+):
+
+    stmt = select(
+        Aicallmetrics.month_name,
+        Aicallmetrics.clinic_name,
+        Aicallmetrics.user_request
+    )
+
+    if clinic:
+        stmt = stmt.where(
+            Aicallmetrics.clinic_name == clinic
+        )
+
+    if month:
+        stmt = stmt.where( func.date_format(Aicallmetrics.month_name,"%b") == month)
+
+    rows = db.execute(stmt).mappings().all()
+
+    results = []
+
+    for row in rows:
+
+        short_month = row.month_name.strftime("%b")
+
+        results.append({
+            "month_name": short_month,
+            "clinic_name": row.clinic_name,
+            "user_request": row.user_request
+        })
+
+    return results
