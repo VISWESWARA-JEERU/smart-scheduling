@@ -186,6 +186,7 @@ def clinic_requests(
 def request_types(
     month: int = None,
     year: int = None,
+    clinic: str = None,
     db=Depends(get_db)
 ):
 
@@ -199,6 +200,8 @@ def request_types(
 
     if year:
         stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+    if clinic:
+        stmt = stmt.where(Aicallmetrics.clinic_name == clinic)
 
     stmt = stmt.group_by(Aicallmetrics.user_request)
 
@@ -303,6 +306,7 @@ def filter_by_month(month:str,db=Depends(get_db)):
 def kpi_metrics(
     month: int = None,
     year: int = None,
+    clinic: str = None,
     db=Depends(get_db)
 ):
 
@@ -313,6 +317,8 @@ def kpi_metrics(
 
     if year:
         stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+    if clinic:
+        stmt = stmt.where(Aicallmetrics.clinic_name == clinic)
 
     subquery = stmt.subquery()
 

@@ -6,7 +6,7 @@ import { Chart } from "chart.js";
 
 Chart.register(ChartDataLabels);
 
-const RequestTypeChart = forwardRef(({ data }, ref) => {
+const RequestTypeChart = forwardRef(({ data, title="Request Types" }, ref) => {
   const filteredData = (data || []).filter(
     (item) => item.total >= 10
   );
@@ -14,8 +14,8 @@ const RequestTypeChart = forwardRef(({ data }, ref) => {
   return (
     // 1. Fixed width typo to make it responsive (w-full + max-width)
     <div className="w-full max-w-[1000px] rounded-xl bg-white p-5 shadow-card mx-auto">
-      <h2 className="mb-4 text-xl font-semibold text-slate-700">
-        Request Types
+      <h2 className="mb-1 text-xl font-semibold text-slate-700">
+        {title}
       </h2>
 
       {/* 2. Added a dedicated relative wrapper for Chart.js responsiveness */}
@@ -52,7 +52,7 @@ const RequestTypeChart = forwardRef(({ data }, ref) => {
             maintainAspectRatio: false,
             // 3. Added layout padding to prevent cut-offs at the top/bottom
             layout: {
-              padding: 20, 
+              padding: 20,
             },
             plugins: {
               legend: {

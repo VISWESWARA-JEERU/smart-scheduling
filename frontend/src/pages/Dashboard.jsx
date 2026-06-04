@@ -50,7 +50,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear,selectedClinic]);
 
   const fetchDashboardData = async () => {
     try {
@@ -71,6 +71,7 @@ function Dashboard() {
         params: {
           month: selectedMonth,
           year: selectedYear,
+          clinic: selectedClinic || undefined,
         },
       });
 
@@ -78,6 +79,7 @@ function Dashboard() {
         params: {
           month: selectedMonth,
           year: selectedYear,
+          clinic: selectedClinic || undefined,
         },
       });
 
@@ -148,7 +150,7 @@ const exportPDF = () => {
 
       pdf.setFont("helvetica", "normal");
       pdf.text(`${monthLabel} ${selectedYear}`, 25, 52);
-      pdf.text(selectedClinic || "All Clinics", 110, 52);
+      pdf.text(selectedClinic|| "All Clinics", 110, 52);
     };
 
     const drawKPICard = (x, y, title, value, color, percent) => {
@@ -257,6 +259,7 @@ const exportPDF = () => {
     // ==========================================
     // PAGE 2 (Combined Doughnut & Monthly Chart)
     // ==========================================
+
     if (requestTypeChartRef.current || monthlyChartRef.current) {
       pdf.addPage();
       drawBorder();
@@ -268,7 +271,7 @@ const exportPDF = () => {
         pdf.setFontSize(16);
         pdf.setTextColor(15, 23, 42);
         pdf.setFont("helvetica", "bold");
-        pdf.text("Request Type Chart", pageWidth / 2, currentY, { align: "center" });
+        pdf.text(`Request Type Chart - ${selectedClinic || "All Clinics"}`, pageWidth / 2, currentY, { align: "center" });
         
         currentY += 8; // Move down for image
         
@@ -453,6 +456,7 @@ const exportPDF = () => {
               <RequestTypeChart
                 ref={requestTypeChartRef}
                 data={requestTypeData}
+                title={`Request Types - ${selectedClinic || "All Clinics"}`}
               />
             </div>
           </div>
