@@ -14,7 +14,7 @@ database_models.Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173",
-       "https://smart-scheduling-1zlwhqoo8-visweswara-jeeru-s-projects.vercel.app"],
+       "https://smart-scheduling-lmaembpax-visweswara-jeeru-s-projects.vercel.app/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
