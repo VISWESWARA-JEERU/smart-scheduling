@@ -10,11 +10,11 @@ from datetime import datetime
 app = FastAPI()
 
 database_models.Base.metadata.create_all(bind=engine)
-#"http://localhost:5173",
-   #     "https://smart-scheduling-1zlwhqoo8-visweswara-jeeru-s-projects.vercel.app
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173",
+       "https://smart-scheduling-1zlwhqoo8-visweswara-jeeru-s-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
