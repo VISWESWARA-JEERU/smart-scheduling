@@ -1,92 +1,67 @@
+import { forwardRef } from "react";
 import { Bar } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import "chart.js/auto";
 import { Chart } from "chart.js";
+
 Chart.register(ChartDataLabels);
 
-// onMonthClick
-
-function MonthlyChart({ data }) {  
-
+const MonthlyChart = forwardRef(({ data }, ref) => {
   return (
-
-    <div className="w-full h-[580px] chart-card rounded-xl bg-white p-6 shadow-card ">
-      <h2 className="text-2xl bg-blue">data.year</h2>
+    <div className="w-full h-[580px] rounded-xl bg-white p-6 shadow-card">
       <Bar
+        ref={ref}
         data={{
           labels: data.map((item) => item.month_name),
 
           datasets: [
             {
               label: "Requests",
-
-              data: data.map(
-                (item) => item.request_count
-              ),
-
-              // backgroundColor:[
-              //   rgba(255, 99, 132, 0.6),
-              //   rgba(54, 162, 235, 0.6),
-              //   rgba(255, 205, 86, 0.6),
-              //   rgba(75, 192, 192, 0.6),
-              //   rgba(153, 102, 255, 0.6),
-              // rgb(255, 99, 132),
-              // rgb(54, 162, 235)
-
-              // ]
+              data: data.map((item) => item.request_count),
               backgroundColor: "rgba(7, 76, 237, 0.6)",
               hoverBackgroundColor: "rgba(239, 32, 32, 0.8)",
-              borerRadius: 5
-            }
-          ]
+              borderRadius: 5,
+            },
+          ],
         }}
         plugins={[ChartDataLabels]}
         options={{
-
           responsive: true,
           maintainAspectRatio: false,
-          // onClick: (event, elements) => {
-          //   if (elements.length > 0) {
-          //     const index = elements[0].index;
-          //     const selectedMonth = data[index].month_name;
 
-          //     onMonthClick(selectedMonth);
-          //   }
-          // },
-          plugins:
-          {
+          plugins: {
             legend: {
-              display: true
+              display: true,
             },
+
             title: {
               display: true,
               text: "Monthly Requests",
               font: {
-                size: 18
-              }
+                size: 18,
+                weight: "bold",
+              },
             },
+
             tooltip: {
               enabled: true,
-              // callbacks: {
-              //   label: function(context) {
-              //     return context.parsed.y + " requests";  },    
-              //   }
             },
+
             datalabels: {
-              // display: true,
               anchor: "end",
               align: "top",
               color: "black",
               font: {
                 weight: "bold",
-                size: 18
-                // weight: "italic",
+                size: 18,
               },
               formatter: (value) => {
-                if (value > 10)
+                if (value > 10) {
                   return value;
-              }
-            }
+                }
+                return "";
+              },
+            },
           },
 
           scales: {
@@ -98,17 +73,20 @@ function MonthlyChart({ data }) {
                 font: {
                   size: 18,
                   weight: "bold",
-                }
+                },
               },
               ticks: {
                 autoSkip: false,
                 maxRotation: 30,
                 minRotation: 0,
                 color: "black",
-                fontstyle: "bold",
-                font: { size: 18 }
-              }
+                font: {
+                  size: 18,
+                  weight: "bold",
+                },
+              },
             },
+
             y: {
               beginAtZero: true,
               title: {
@@ -117,28 +95,23 @@ function MonthlyChart({ data }) {
                 color: "black",
                 font: {
                   size: 18,
-                  weight: "bold"
-                }
+                  weight: "bold",
+                },
               },
               ticks: {
                 autoSkip: false,
                 stepSize: 500,
                 color: "black",
-                font: { size: 18 }
-
-              }
-            }
-          }
-
-
+                font: {
+                  size: 18,
+                },
+              },
+            },
+          },
         }}
-
       />
-
-
     </div>
-
   );
-}
+});
 
 export default MonthlyChart;
