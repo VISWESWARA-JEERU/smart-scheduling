@@ -89,183 +89,223 @@ function Dashboard() {
       console.log(error);
     }
   };
+const exportPDF = () => {
+    const pdf = new jsPDF("p", "mm", "a4");
 
-  const exportPDF = () => {
-  const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentWidth = pageWidth - margin * 2;
 
-  const margin = 10;
-  const contentWidth = pageWidth - margin * 2;
+    const drawBorder = () => {
+      pdf.setDrawColor(30, 41, 59);
+      pdf.setLineWidth(0.5);
+      pdf.rect(margin, margin, contentWidth, pageHeight - margin * 2);
+    };
 
-  const drawBorder = () => {
-    pdf.setDrawColor(30, 41, 59);
-    pdf.setLineWidth(0.5);
-    pdf.rect(margin, margin, contentWidth, pageHeight - margin * 2);
-  };
+    const drawFooter = () => {
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(
+        `Report Generated On: ${new Date().toLocaleDateString()}`,
+        margin + 5,
+        pageHeight - 15
+      );
+    };
 
-  const drawFooter = () => {
-    pdf.setFontSize(9);
-    pdf.setTextColor(100, 116, 139);
-    pdf.text(
-      `Report Generated On: ${new Date().toLocaleDateString()}`,
-      margin + 5,
-      pageHeight - 15
-    );
-  };
+    const getRequestTotal = (name) => {
+      return (
+        requestTypeData.find((item) => item.user_request === name)?.total || 0
+      );
+    };
 
-  const getRequestTotal = (name) => {
-    return (
-      requestTypeData.find((item) => item.user_request === name)?.total || 0
-    );
-  };
+    const monthLabel = monthNames[selectedMonth];
 
-  const monthLabel = monthNames[selectedMonth];
+    const drawTitleAndFilters = () => {
+      pdf.setFontSize(20);
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("AI Voice Agent Metrics Report", pageWidth / 2, 20, {
+        align: "center",
+      });
 
-  const drawTitleAndFilters = () => {
-    pdf.setFontSize(20);
-    pdf.setTextColor(15, 23, 42);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("AI Voice Agent Metrics Report", pageWidth / 2, 20, {
-      align: "center",
-    });
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
 
-    // Filter table moved slightly up
-    pdf.setFontSize(11);
-    pdf.setFont("helvetica", "normal");
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(20, 30, 170, 26, "F");
 
-    pdf.setFillColor(241, 245, 249);
-    pdf.rect(20, 30, 170, 26, "F");
+      pdf.setDrawColor(203, 213, 225);
+      pdf.rect(20, 30, 170, 26);
 
-    pdf.setDrawColor(203, 213, 225);
-    pdf.rect(20, 30, 170, 26);
+      pdf.line(105, 30, 105, 56);
+      pdf.line(20, 43, 190, 43);
 
-    pdf.line(105, 30, 105, 56);
-    pdf.line(20, 43, 190, 43);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Month & Year", 25, 39);
+      pdf.text("Clinic", 110, 39);
 
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Month & Year", 25, 39);
-    pdf.text("Clinic", 110, 39);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`${monthLabel} ${selectedYear}`, 25, 52);
+      pdf.text(selectedClinic || "All Clinics", 110, 52);
+    };
 
-    pdf.setFont("helvetica", "normal");
-    pdf.text(`${monthLabel} ${selectedYear}`, 25, 52);
-    pdf.text(selectedClinic || "All Clinics", 110, 52);
-  };
+    const drawKPICard = (x, y, title, value, color, percent) => {
+      pdf.setFillColor(color.r, color.g, color.b);
+      pdf.roundedRect(x, y, 40, 23, 3, 3, "F");
 
-  const drawKPICard = (x, y, title, value, color) => {
-    pdf.setFillColor(color.r, color.g, color.b);
-    pdf.roundedRect(x, y, 40, 23, 3, 3, "F");
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(title, x + 4, y + 8);
 
-    pdf.setTextColor(15, 23, 42);
-    pdf.setFontSize(8);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(title, x + 4, y + 8);
+      pdf.setFontSize(15);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(String(value || 0), x + 4, y + 17);
 
-    pdf.setFontSize(15);
-    pdf.setFont("helvetica", "bold");
-    pdf.text(String(value || 0), x + 4, y + 18);
-  };
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 116, 139);
+      const pct = typeof percent === "number" ? percent : 0;
+      pdf.text(`${pct.toFixed(2)}% of calls`, x + 4, y + 21);
+    };
 
-  const drawKPIs = () => {
-    // KPI cards moved up, KPI Summary text removed
-    drawKPICard(20, 64, "Total Requests", kpiData.total_requests, {
-      r: 254,
-      g: 243,
-      b: 199,
-    });
+    const drawKPIs = () => {
+      const total = Number(kpiData?.total_requests || 0) || 0;
 
-    drawKPICard(
-      65,
-      64,
-      "Appointment",
-      getRequestTotal("Appointment Confirmation/Inquiry"),
-      { r: 220, g: 252, b: 231 }
-    );
+      drawKPICard(
+        20,
+        67,
+        "Total Requests",
+        total,
+        { r: 254, g: 243, b: 199 },
+        total ? 100 : 0
+      );
+      drawKPICard(
+        65,
+        67,
+        "Appointments",
+        getRequestTotal("Appointment Confirmation/Inquiry"),
+        { r: 220, g: 252, b: 231 },
+        total ? (getRequestTotal("Appointment Confirmation/Inquiry") / total) * 100 : 0
+      );
+      drawKPICard(
+        110,
+        67,
+        "Front Desk",
+        getRequestTotal("Front Desk Request"),
+        { r: 219, g: 234, b: 254 },
+        total ? (getRequestTotal("Front Desk Request") / total) * 100 : 0
+      );
+      drawKPICard(
+        155,
+        67,
+        "Silent Calls",
+        getRequestTotal("No User Request (Silent Call)"),
+        { r: 254, g: 226, b: 226 },
+        total ? (getRequestTotal("No User Request (Silent Call)") / total) * 100 : 0
+      );
+    };
 
-    drawKPICard(110, 64, "Front Desk", getRequestTotal("Front Desk Request"), {
-      r: 219,
-      g: 234,
-      b: 254,
-    });
+    // --- NEW HELPER FUNCTION ---
+    // Calculates perfect proportions so images never stretch or squish
+    const addProportionalImage = (base64Image, x, y, maxWidth, maxHeight) => {
+      const imgProps = pdf.getImageProperties(base64Image);
+      const imgRatio = imgProps.width / imgProps.height;
+      const maxRatio = maxWidth / maxHeight;
 
-    drawKPICard(
-      155,
-      64,
-      "Silent Calls",
-      getRequestTotal("No User Request (Silent Call)"),
-      { r: 254, g: 226, b: 226 }
-    );
-  };
+      let finalWidth, finalHeight;
 
-  // PAGE 1 - Clinic chart first
-  drawBorder();
-  drawTitleAndFilters();
-  drawKPIs();
+      if (imgRatio > maxRatio) {
+        // Image is wider than bounds (Scale by width)
+        finalWidth = maxWidth;
+        finalHeight = maxWidth / imgRatio;
+      } else {
+        // Image is taller than bounds (Scale by height)
+        finalHeight = maxHeight;
+        finalWidth = maxHeight * imgRatio;
+      }
 
-  if (clinicChartRef.current) {
-    const clinicImage = clinicChartRef.current.toBase64Image();
+      // Center the image horizontally if it was scaled by height
+      const xOffset = x + (maxWidth - finalWidth) / 2;
+      
+      pdf.addImage(base64Image, "PNG", xOffset, y, finalWidth, finalHeight);
+      
+      return finalHeight; // Return height so we know where to place the next item
+    };
 
-    pdf.setTextColor(15, 23, 42);
-    pdf.setFontSize(14);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Clinic Requests Chart", 20, 98);
-
-    // image height is controlled by last value: 115
-    pdf.addImage(clinicImage, "PNG", 15, 104, 180, 115);
-  }
-
-  drawFooter();
-
-  // PAGE 2 - Request Type chart
-  if (requestTypeChartRef.current) {
-    pdf.addPage();
+    // ==========================================
+    // PAGE 1 
+    // ==========================================
     drawBorder();
+    drawTitleAndFilters();
+    drawKPIs();
 
-    pdf.setFontSize(18);
-    pdf.setTextColor(15, 23, 42);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Request Type Chart", pageWidth / 2, 22, {
-      align: "center",
-    });
+    if (clinicChartRef.current) {
+      const clinicImage = clinicChartRef.current.toBase64Image();
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Clinic Requests Chart", 20, 98);
 
-    const requestTypeImage = requestTypeChartRef.current.toBase64Image();
-
-    // y = 32 reduces top gap
-    // height = 145 increases chart size
-    pdf.addImage(requestTypeImage, "PNG", 15, 32, 180, 145);
-
+      // Max width 170, max height 140
+      addProportionalImage(clinicImage, 20, 104, 170, 140);
+    }
     drawFooter();
-  }
 
-  // PAGE 3 - Monthly chart
-  if (monthlyChartRef.current) {
-    pdf.addPage();
-    drawBorder();
+    // ==========================================
+    // PAGE 2 (Combined Doughnut & Monthly Chart)
+    // ==========================================
+    if (requestTypeChartRef.current || monthlyChartRef.current) {
+      pdf.addPage();
+      drawBorder();
 
-    pdf.setFontSize(18);
-    pdf.setTextColor(15, 23, 42);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Monthly Requests Chart", pageWidth / 2, 22, {
-      align: "center",
-    });
+      let currentY = 25; // Track vertical position dynamically
 
-    const monthlyImage = monthlyChartRef.current.toBase64Image();
+      // 1. First Chart: Doughnut
+      if (requestTypeChartRef.current) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Request Type Chart", pageWidth / 2, currentY, { align: "center" });
+        
+        currentY += 8; // Move down for image
+        
+        const requestTypeImage = requestTypeChartRef.current.toBase64Image();
+        
+        // We limit max height to 110mm so the second chart can fit below it
+        const actualHeight = addProportionalImage(requestTypeImage, 20, currentY, 170, 110);
+        
+        currentY += actualHeight + 20; // Move down past image + gap
+      }
 
-    // y = 35 reduces top gap
-    // height = 130 controls image height
-    pdf.addImage(monthlyImage, "PNG", 15, 35, 180, 130);
+      // 2. Second Chart: Monthly
+      if (monthlyChartRef.current) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Monthly Requests Chart", pageWidth / 2, currentY, { align: "center" });
 
-    drawFooter();
-  }
+        currentY += 8; // Move down for image
 
-  pdf.save(`AI_Report_${monthLabel}_${selectedYear}.pdf`);
-};
+        const monthlyImage = monthlyChartRef.current.toBase64Image();
+        
+        // Limit remaining height so it doesn't cross the footer
+        const remainingHeight = pageHeight - currentY - 25; 
+        addProportionalImage(monthlyImage, 20, currentY, 170, remainingHeight);
+      }
+
+      drawFooter();
+    }
+
+    pdf.save(`AI_Report_${monthLabel}_${selectedYear}.pdf`);
+  };
 
   return (
     <div className="min-h-screen w-full bg-slate-100">
       <div className="flex min-h-screen w-full">
-        <Sidebar />
+        {/* <Sidebar /> */}
 
         <main className="flex-1 p-6 sm:p-7">
           <Navbar />
