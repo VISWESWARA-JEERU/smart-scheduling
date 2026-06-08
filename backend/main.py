@@ -12,7 +12,7 @@ app = FastAPI()
 database_models.Base.metadata.create_all(bind=engine)
 
 # http://localhost:5173",
-#        "https://smart-scheduling-lmaembpax-visweswara-jeeru-s-projects.vercel.app/
+#        "https://smart-scheduling-2ymx154p3-visweswara-jeeru-s-projects.vercel.app/
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
