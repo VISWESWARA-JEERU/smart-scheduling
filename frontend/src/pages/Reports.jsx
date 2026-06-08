@@ -60,7 +60,6 @@ function Reports() {
             </div>
 
             <div className="flex gap-8  ">
-              <button className="rounded-lg px-4 py-2 text-white bg-blue-600 font-medium hover:bg-green-600 transition-colors">Export CSV</button>
               <button className="rounded-lg px-4 py-2 text-white bg-blue-600 font-medium hover:bg-green-600 transition-colors">Export PDF</button>
             </div>
 

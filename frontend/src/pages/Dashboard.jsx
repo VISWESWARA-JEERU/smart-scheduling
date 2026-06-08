@@ -64,6 +64,7 @@ function Dashboard() {
         params: {
           month: selectedMonth,
           year: selectedYear,
+         
         },
       });
 
@@ -419,11 +420,6 @@ const exportPDF = () => {
                   ))}
                 </select>
               </div>
-
-              <button className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-600">
-                Export CSV
-              </button>
-
               <button
                 onClick={exportPDF}
                 className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-600"
@@ -449,7 +445,9 @@ const exportPDF = () => {
             <ClinicChart
               ref={clinicChartRef}
               data={clinicData}
-              title={`Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear}`}
+              selectedClinic={selectedClinic}
+              title={ selectedClinic ? `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear} - ${selectedClinic}` : `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear}`}
+                
             />
 
             <div className="lg:col-span-2">

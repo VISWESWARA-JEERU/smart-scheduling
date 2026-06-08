@@ -58,25 +58,10 @@ def get_metrics( db= Depends(get_db)):
     return result
 
 
-# @app.get("/api/monthly-requests")
-# def monthly_requests(db= Depends(get_db)):
-#       stmt = (select(Aicallmetrics.month_name,
-#             func.count(Aicallmetrics.user_request).label('request_count'))
-#             .group_by(Aicallmetrics.month_name)
-#             .order_by(Aicallmetrics.month_name))
-#       rows = db.execute(stmt).mappings().all()
-#       results =[]
-#       for row in rows:
-#             short_month = row.month_name.strftime("%b")
-#             results.append({
-#                 'month_name':short_month,
-#                 'request_count':row.request_count
-#             })
-    
-#       return results
+
 
 @app.get("/api/monthly-requests")
-def monthly_requests(year: int = None, db=Depends(get_db)):
+def monthly_requests(year: int = None,db=Depends(get_db)):
 
     stmt = select(
         extract("month", Aicallmetrics.month_name).label("month"),
@@ -86,6 +71,8 @@ def monthly_requests(year: int = None, db=Depends(get_db)):
 
     if year:
         stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+    
+    
 
     stmt = (
         stmt.group_by(
@@ -116,25 +103,6 @@ def monthly_requests(year: int = None, db=Depends(get_db)):
     return results
 
 
-
-
-# @app.get("/api/clinic-requests")
-# def clinic_requests( db = Depends(get_db)):
-        
-#         stmt = (select(Aicallmetrics.clinic_name,
-#                (func.count(Aicallmetrics.user_request).label("total_requests")))
-#                .group_by(Aicallmetrics.clinic_name)
-#                .order_by(desc('total_requests')))
-#         rows = db.execute(stmt).mappings().all()
-        
-
-#         results =[]
-#         for row in rows:
-#              results.append({
-#                   "clinic_name": row.clinic_name,
-#                   "total_requests":row.total_requests
-#              })    
-#         return results
 @app.get("/api/clinic-requests")
 def clinic_requests(
     month: int = None,
@@ -152,6 +120,8 @@ def clinic_requests(
 
     if year:
         stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+    
+    
 
     stmt = (
         stmt.group_by(Aicallmetrics.clinic_name)

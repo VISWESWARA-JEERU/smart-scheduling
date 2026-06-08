@@ -7,12 +7,15 @@ import { Chart } from "chart.js";
 
 Chart.register(ChartDataLabels);
 
-const ClinicChart = forwardRef(({ data, title = "Clinic Requests" }, ref) => {
+const ClinicChart = forwardRef(({ data, title = "Clinic Requests" ,selectedClinic}, ref) => {
   const sortedData = [...(data || [])].sort(
     (a, b) => b.total_requests - a.total_requests
   );
+  
+  const ClinicFilteredData = selectedClinic ? sortedData.filter(
+    (item) => item.clinic_name === selectedClinic) : sortedData;
 
-  const filteredData = sortedData.filter(
+  const filteredData = ClinicFilteredData.filter(
     (item) => item.total_requests >= 10
   );
 
