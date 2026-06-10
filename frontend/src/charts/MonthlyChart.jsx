@@ -8,7 +8,7 @@ Chart.register(ChartDataLabels);
 
 const MonthlyChart = forwardRef(({ data }, ref) => {
   return (
-    <div className="w-full h-[580px] rounded-xl bg-white p-6 shadow-card">
+    <div className="w-full h-[580px] rounded-xl bg-white p-6 shadow-cardtransition-transform hover:-translate-y-3 shadow-lg hover:border border-slate-300 ">
       <Bar
         ref={ref}
         data={{

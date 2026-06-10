@@ -20,7 +20,7 @@ const ClinicChart = forwardRef(({ data, title = "Clinic Requests" ,selectedClini
   );
 
   return (
-    <div className="h-[580px] w-full rounded-xl bg-white p-5 shadow-card">
+    <div className="h-[580px] w-full rounded-xl bg-white p-5 shadow-card transition-transform hover:-translate-y-3 shadow-lg hover:border border-slate-300">
       <Bar
         ref={ref}
         data={{

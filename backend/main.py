@@ -3,7 +3,7 @@ from fastapi import FastAPI,Depends,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import sessionlocal ,engine
 import  database_models 
-from  database_models import  Aicallmetrics
+from  database_models import  Aicallmetrics, AicallmetricsCreate
 from sqlalchemy import select,func,desc,extract
 from datetime import datetime
 
@@ -37,25 +37,47 @@ def get_db():
 # @app.get("/")
 # def read_root(db= sessionlocal()):    
 #     return {"message": "Welcome to the AI Call Metrics API!"}
-
-@app.get("/api/metrics")
+@app.get("/api/metrics_call")
 def get_metrics( db= Depends(get_db)):
    
-    #metrics = db.query(database_models.Aicallmetrics).all()
-    stmt = select(Aicallmetrics)
-    metrics = db.scalars(stmt).all()
+    #metrics = db.query(database_models.AicallmetricsCreate).all()
+    stmt = select(AicallmetricsCreate.clinic_name,AicallmetricsCreate.call_timestamp)
+    metrics = db.execute(stmt).all()
     result = []
     
-   
     for metric in metrics:
-        short_month = metric.month_name.strftime("%b")
+        
         result.append({
-             "id": metric.id,
-            "month_name": short_month,
             "clinic_name": metric.clinic_name,
-            "user_request": metric.user_request
+            "month_name": metric.call_timestamp.strftime("%b %Y")
         })   
     return result
+
+
+
+
+
+
+
+
+# @app.get("/api/metrics")
+# def get_metrics( db= Depends(get_db)):
+   
+#     #metrics = db.query(database_models.Aicallmetrics).all()
+#     stmt = select(Aicallmetrics)
+#     metrics = db.scalars(stmt).all()
+#     result = []
+    
+   
+#     for metric in metrics:
+#         short_month = metric.month_name.strftime("%b")
+#         result.append({
+#              "id": metric.id,
+#             "month_name": short_month,
+#             "clinic_name": metric.clinic_name,
+#             "user_request": metric.user_request
+#         })   
+#     return result
 
 
 
@@ -64,22 +86,22 @@ def get_metrics( db= Depends(get_db)):
 def monthly_requests(year: int = None,db=Depends(get_db)):
 
     stmt = select(
-        extract("month", Aicallmetrics.month_name).label("month"),
-        extract("year", Aicallmetrics.month_name).label("year"),
-        func.count(Aicallmetrics.user_request).label("request_count")
+        extract("month", AicallmetricsCreate.call_timestamp).label("month"),
+        extract("year", AicallmetricsCreate.call_timestamp).label("year"),
+        func.count(AicallmetricsCreate.final_output).label("request_count")
     )
 
     if year:
-        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+        stmt = stmt.where(extract("year", AicallmetricsCreate.call_timestamp) == year)
     
     
 
     stmt = (
         stmt.group_by(
-            extract("month", Aicallmetrics.month_name),
-            extract("year", Aicallmetrics.month_name)
+            extract("month", AicallmetricsCreate.call_timestamp),
+            extract("year", AicallmetricsCreate.call_timestamp)
         )
-        .order_by(extract("month", Aicallmetrics.month_name))
+        .order_by(extract("month", AicallmetricsCreate.call_timestamp))
     )
 
     rows = db.execute(stmt).mappings().all()
@@ -111,20 +133,20 @@ def clinic_requests(
 ):
 
     stmt = select(
-        Aicallmetrics.clinic_name,
-        func.count(Aicallmetrics.user_request).label("total_requests")
+        AicallmetricsCreate.clinic_name,
+        func.count(AicallmetricsCreate.final_output).label("total_requests")
     )
 
     if month:
-        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
+        stmt = stmt.where(extract("month", AicallmetricsCreate.call_timestamp) == month)
 
     if year:
-        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+        stmt = stmt.where(extract("year", AicallmetricsCreate.call_timestamp) == year)
     
     
 
     stmt = (
-        stmt.group_by(Aicallmetrics.clinic_name)
+        stmt.group_by(AicallmetricsCreate.clinic_name)
         .order_by(desc("total_requests"))
     )
 
@@ -162,25 +184,25 @@ def request_types(
 ):
 
     stmt = select(
-        Aicallmetrics.user_request,
+        AicallmetricsCreate.final_output,
         func.count().label("total")
     )
 
     if month:
-        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
+        stmt = stmt.where(extract("month", AicallmetricsCreate.call_timestamp) == month)
 
     if year:
-        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+        stmt = stmt.where(extract("year", AicallmetricsCreate.call_timestamp) == year)
     if clinic:
-        stmt = stmt.where(Aicallmetrics.clinic_name == clinic)
+        stmt = stmt.where(AicallmetricsCreate.clinic_name == clinic)
 
-    stmt = stmt.group_by(Aicallmetrics.user_request)
+    stmt = stmt.group_by(AicallmetricsCreate.final_output)
 
     rows = db.execute(stmt).mappings().all()
 
     return [
         {
-            "user_request": row.user_request,
+            "user_request": row.final_output,
             "total": row.total
         }
         for row in rows
@@ -218,29 +240,29 @@ def request_types(
 
 
 
-@app.get("/api/filter/month/{month}")
-def filter_by_month(month:str,db=Depends(get_db)):
-        try:
-             month_number = datetime.strptime(month.title(),"%b").month
+# @app.get("/api/filter/month/{month}")
+# def filter_by_month(month:str,db=Depends(get_db)):
+#         try:
+#              month_number = datetime.strptime(month.title(),"%b").month
              
-        except ValueError:
-             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
+#         except ValueError:
+#              raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
 
-        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
-                .where(extract('month',Aicallmetrics.month_name)== month_number))
+#         stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+#                 .where(extract('month',Aicallmetrics.month_name)== month_number))
         
-        rows = db.execute(stmt).mappings().all()
-        results=[]
-        for row in rows:
+#         rows = db.execute(stmt).mappings().all()
+#         results=[]
+#         for row in rows:
          
-            short_month = row.month_name.strftime("%b")
-            results.append({
-                  "month_name": short_month,
-                  "clinic_name": row.clinic_name,
-                  "user_request": row.user_request
-            })
+#             short_month = row.month_name.strftime("%b")
+#             results.append({
+#                   "month_name": short_month,
+#                   "clinic_name": row.clinic_name,
+#                   "user_request": row.user_request
+#             })
 
-        return results
+#         return results
 # #     cursor.execute("""
 # #         SELECT
 # #             month_name,
@@ -281,15 +303,15 @@ def kpi_metrics(
     db=Depends(get_db)
 ):
 
-    stmt = select(Aicallmetrics)
+    stmt = select(AicallmetricsCreate)
 
     if month:
-        stmt = stmt.where(extract("month", Aicallmetrics.month_name) == month)
+        stmt = stmt.where(extract("month", AicallmetricsCreate.call_timestamp) == month)
 
     if year:
-        stmt = stmt.where(extract("year", Aicallmetrics.month_name) == year)
+        stmt = stmt.where(extract("year", AicallmetricsCreate.call_timestamp) == year)
     if clinic:
-        stmt = stmt.where(Aicallmetrics.clinic_name == clinic)
+        stmt = stmt.where(AicallmetricsCreate.clinic_name == clinic)
 
     subquery = stmt.subquery()
 
@@ -311,20 +333,20 @@ def kpi_metrics(
 
 # #     return result
 
-@app.get("/api/filter/clinic/{clinic}")
-def filter_by_clinic(clinic: str,db=Depends(get_db)):   
-        stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
-             .where(Aicallmetrics.clinic_name == clinic))   
-        rows = db.execute(stmt).mappings().all()
-        results = []
-        for row in rows:
-            short_month = row.month_name.strftime("%b")
-            results.append({
-                  "month_name": short_month,
-                  "clinic_name": row.clinic_name,
-                  "user_request": row.user_request
-            })
-        return results
+# @app.get("/api/filter/clinic/{clinic}")
+# def filter_by_clinic(clinic: str,db=Depends(get_db)):   
+#         stmt = (select(Aicallmetrics.month_name,Aicallmetrics.clinic_name,Aicallmetrics.user_request)
+#              .where(Aicallmetrics.clinic_name == clinic))   
+#         rows = db.execute(stmt).mappings().all()
+#         results = []
+#         for row in rows:
+#             short_month = row.month_name.strftime("%b")
+#             results.append({
+#                   "month_name": short_month,
+#                   "clinic_name": row.clinic_name,
+#                   "user_request": row.user_request
+#             })
+#         return results
 
 
 
@@ -356,29 +378,29 @@ def filter_by_clinic(clinic: str,db=Depends(get_db)):
 
 
 
-@app.get("/api/clinic-requests/month/{month}")
-def clinic_requests_by_month(month:str,db=Depends(get_db)):     
-        try:
-             month_number = datetime.strptime(month.title(),"%b").month
+# @app.get("/api/clinic-requests/month/{month}")
+# def clinic_requests_by_month(month:str,db=Depends(get_db)):     
+#         try:
+#              month_number = datetime.strptime(month.title(),"%b").month
              
-        except ValueError:
-             raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
+#         except ValueError:
+#              raise HTTPException(status=404,detail = "invalid month use 'jan','feb,'mar'...")
 
-        stmt = (select(Aicallmetrics.clinic_name,
-               func.count(Aicallmetrics.user_request).label("total_requests"))
-               .where(extract('month',Aicallmetrics.month_name)== month_number)
-               .group_by(Aicallmetrics.clinic_name)
-               .order_by(desc('total_requests')))
-        rows = db.execute(stmt).mappings().all()
+#         stmt = (select(Aicallmetrics.clinic_name,
+#                func.count(Aicallmetrics.user_request).label("total_requests"))
+#                .where(extract('month',Aicallmetrics.month_name)== month_number)
+#                .group_by(Aicallmetrics.clinic_name)
+#                .order_by(desc('total_requests')))
+#         rows = db.execute(stmt).mappings().all()
         
 
-        results =[]
-        for row in rows:
-             results.append({
-                  "clinic_name": row.clinic_name,
-                  "total_requests":row.total_requests
-             })    
-        return results
+#         results =[]
+#         for row in rows:
+#              results.append({
+#                   "clinic_name": row.clinic_name,
+#                   "total_requests":row.total_requests
+#              })    
+#         return results
 
 
 # --------------------------------------------------------------------------------
@@ -387,40 +409,40 @@ def clinic_requests_by_month(month:str,db=Depends(get_db)):
 
 
 
-@app.get("/api/reports")
-def get_reports(
-    clinic: str = None,
-    month: str = None,
-    request_type: str = None,
-    db=Depends(get_db)
-):
+# @app.get("/api/reports")
+# def get_reports(
+#     clinic: str = None,
+#     month: str = None,
+#     request_type: str = None,
+#     db=Depends(get_db)
+# ):
 
-    stmt = select(
-        Aicallmetrics.month_name,
-        Aicallmetrics.clinic_name,
-        Aicallmetrics.user_request
-    )
+#     stmt = select(
+#         Aicallmetrics.month_name,
+#         Aicallmetrics.clinic_name,
+#         Aicallmetrics.user_request
+#     )
 
-    if clinic:
-        stmt = stmt.where(
-            Aicallmetrics.clinic_name == clinic
-        )
+#     if clinic:
+#         stmt = stmt.where(
+#             Aicallmetrics.clinic_name == clinic
+#         )
 
-    if month:
-        stmt = stmt.where( func.date_format(Aicallmetrics.month_name,"%b") == month)
+#     if month:
+#         stmt = stmt.where( func.date_format(Aicallmetrics.month_name,"%b") == month)
 
-    rows = db.execute(stmt).mappings().all()
+#     rows = db.execute(stmt).mappings().all()
 
-    results = []
+#     results = []
 
-    for row in rows:
+#     for row in rows:
 
-        short_month = row.month_name.strftime("%b")
+#         short_month = row.month_name.strftime("%b")
 
-        results.append({
-            "month_name": short_month,
-            "clinic_name": row.clinic_name,
-            "user_request": row.user_request
-        })
+#         results.append({
+#             "month_name": short_month,
+#             "clinic_name": row.clinic_name,
+#             "user_request": row.user_request
+#         })
 
-    return results
+#     return results

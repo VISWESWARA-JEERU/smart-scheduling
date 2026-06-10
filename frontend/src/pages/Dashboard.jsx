@@ -50,7 +50,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedMonth, selectedYear,selectedClinic]);
+  }, [selectedMonth, selectedYear, selectedClinic]);
 
   const fetchDashboardData = async () => {
     try {
@@ -64,7 +64,7 @@ function Dashboard() {
         params: {
           month: selectedMonth,
           year: selectedYear,
-         
+
         },
       });
 
@@ -92,7 +92,7 @@ function Dashboard() {
       console.log(error);
     }
   };
-const exportPDF = () => {
+  const exportPDF = () => {
     const pdf = new jsPDF("p", "mm", "a4");
 
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -151,7 +151,7 @@ const exportPDF = () => {
 
       pdf.setFont("helvetica", "normal");
       pdf.text(`${monthLabel} ${selectedYear}`, 25, 52);
-      pdf.text(selectedClinic|| "All Clinics", 110, 52);
+      pdf.text(selectedClinic || "All Clinics", 110, 52);
     };
 
     const drawKPICard = (x, y, title, value, color, percent) => {
@@ -232,9 +232,9 @@ const exportPDF = () => {
 
       // Center the image horizontally if it was scaled by height
       const xOffset = x + (maxWidth - finalWidth) / 2;
-      
+
       pdf.addImage(base64Image, "PNG", xOffset, y, finalWidth, finalHeight);
-      
+
       return finalHeight; // Return height so we know where to place the next item
     };
 
@@ -273,14 +273,14 @@ const exportPDF = () => {
         pdf.setTextColor(15, 23, 42);
         pdf.setFont("helvetica", "bold");
         pdf.text(`Request Type Chart - ${selectedClinic || "All Clinics"}`, pageWidth / 2, currentY, { align: "center" });
-        
+
         currentY += 8; // Move down for image
-        
+
         const requestTypeImage = requestTypeChartRef.current.toBase64Image();
-        
+
         // We limit max height to 110mm so the second chart can fit below it
         const actualHeight = addProportionalImage(requestTypeImage, 20, currentY, 170, 110);
-        
+
         currentY += actualHeight + 20; // Move down past image + gap
       }
 
@@ -294,9 +294,9 @@ const exportPDF = () => {
         currentY += 8; // Move down for image
 
         const monthlyImage = monthlyChartRef.current.toBase64Image();
-        
+
         // Limit remaining height so it doesn't cross the footer
-        const remainingHeight = pageHeight - currentY - 25; 
+        const remainingHeight = pageHeight - currentY - 25;
         addProportionalImage(monthlyImage, 20, currentY, 170, remainingHeight);
       }
 
@@ -313,27 +313,21 @@ const exportPDF = () => {
 
         <main className="flex-1 p-6 sm:p-7">
           <Navbar />
-
-          <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="mt-4 mb-6 flex justify-center items-center w-full bg-blue-800">
+           <div className=" flex items-center gap-3 rounded-2xl bg-white p-5 shadow-lg mt-6 mb-6 border border-slate-200 transition-transform hover:-translate-y-1 ">
             {/* Dashboard Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-white p-5 shadow-lg">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">
-                  Dashboard Filters
-                </h2>
-
-                <p className="text-sm text-slate-500">
-                  Filter dashboard analytics by month and year
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-14">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                </svg>
+               <div className="flex items-center jusify-between gap-12 w-full">
                 <div className="flex flex-col">
+                 
                   <label
                     htmlFor="month"
-                    className="mb-1 text-sm font-semibold text-slate-600"
+                    className="mb-1 text-sm font-semibold text-slate-600 "
                   >
-                    Month
+
+                    Month 
                   </label>
 
                   <select
@@ -342,8 +336,10 @@ const exportPDF = () => {
                     onChange={(e) =>
                       setSelectedMonth(Number(e.target.value))
                     }
-                    className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    // className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition  focus:ring-2 focus:ring-blue-200 "
                   >
+                    
                     <option value={1}>January</option>
                     <option value={2}>February</option>
                     <option value={3}>March</option>
@@ -356,8 +352,16 @@ const exportPDF = () => {
                     <option value={10}>October</option>
                     <option value={11}>November</option>
                     <option value={12}>December</option>
+                      {/* <svg class="w-4 h-4 ms-1.5 -me-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg> */}
                   </select>
                 </div>
+
+
+
+
+
+
 
                 <div className="flex flex-col">
                   <label
@@ -375,26 +379,12 @@ const exportPDF = () => {
                     }
                     className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   >
+                    
                     <option value={2026}>2026</option>
                     <option value={2025}>2025</option>
                   </select>
                 </div>
-              </div>
-            </div>
-
-            {/* Reports */}
-            <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl bg-white p-5 shadow-lg">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">
-                  Reports
-                </h2>
-
-                <p className="text-sm text-slate-500">
-                  Export reports based on selected filters
-                </p>
-              </div>
-
-              <div className="flex flex-col">
+                <div className="flex flex-col">
                 <label
                   htmlFor="clinic"
                   className="mb-1 text-sm font-semibold text-slate-600"
@@ -420,13 +410,18 @@ const exportPDF = () => {
                   ))}
                 </select>
               </div>
-              <button
-                onClick={exportPDF}
-                className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-600"
+              <button type="button" className=" rounded-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-base text-m px-4 py-2.5 text-center leading-5
+                  onClick={exportPDF}">Export PDF</button>
+              {/* <button
+                
+                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-green-600"
               >
-                Export PDF
-              </button>
+                Export PDF */}
+              {/* </button> */}
+               </div>
             </div>
+          
+   
           </div>
 
           <div className="mb-6">
@@ -446,8 +441,8 @@ const exportPDF = () => {
               ref={clinicChartRef}
               data={clinicData}
               selectedClinic={selectedClinic}
-              title={ selectedClinic ? `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear} - ${selectedClinic}` : `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear}`}
-                
+              title={selectedClinic ? `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear} - ${selectedClinic}` : `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear}`}
+
             />
 
             <div className="lg:col-span-2">

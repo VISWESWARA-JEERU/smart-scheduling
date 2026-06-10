@@ -1,17 +1,18 @@
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# import psycopg2
-# import os
-# import database
 
-# from database import sessionlocal 
-# from dotenv import load_dotenv
+# from fastapi import FastAPI,Depends,HTTPException
+# from fastapi.middleware.cors import CORSMiddleware
+# from database import sessionlocal ,engine
 # import  database_models 
-# import  models
-# load_dotenv()
+# from  database_models import  AicallmetricsCreate
+# from sqlalchemy import select,func,desc,extract
+# from datetime import datetime
 
 # app = FastAPI()
 
+# database_models.Base.metadata.create_all(bind=engine)
+
+# # http://localhost:5173",
+# #        "https://smart-scheduling-2ymx154p3-visweswara-jeeru-s-projects.vercel.app/
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=["*"],
@@ -20,240 +21,17 @@
 #     allow_headers=["*"],
 # )
 
-# # conn = psycopg2.connect(
-# #     host=os.getenv("DB_HOST"),
-# #     database=os.getenv("DB_NAME"),
-# #     user=os.getenv("DB_USER"),
-# #     password=os.getenv("DB_PASSWORD"),
-# #     port=os.getenv("DB_PORT")
-# # )
-# #conn = sessionlocal()
 
+# @app.get("/")
+# def read_root():    
+#     return {"message": "Welcome to the AI Call Metrics API!"}
 
-# @app.get("/api/metrics")
-# def get_metrics():
+# def get_db():
+#     db = sessionlocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close() 
 
-#     cursor = conn.cursor()
 
-#     cursor.execute("""
-#         SELECT month_name, clinic_name, user_request
-#         FROM ai_call_metrics
-#     """)
 
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-#         result.append({
-#             "month_name": row[0],
-#             "clinic_name": row[1],
-#             "user_request": row[2]
-#         })   
-# # @app.get("/api/metrics")
-# # def get_metrics():
-
-# #     cursor = conn.cursor()
-
-# #     cursor.execute("""
-# #         SELECT 
-# #             month_name,
-# #             COUNT(user_request) AS request_count
-# #         FROM ai_call_metrics
-# #         GROUP BY month_name
-# #         ORDER BY month_name
-# #     """)
-
-# #     rows = cursor.fetchall()
-
-# #     result = []
-
-# #     for row in rows:
-
-# #         result.append({
-# #             "month_name": row[0],
-# #             "request_count": row[1]
-# #         })
-
-#     cursor.close()
-
-#     return result
-
-
-
-# @app.get("/api/monthly-requests")
-# def monthly_requests():
-
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         SELECT 
-#             month_name,
-#             COUNT(user_request) AS request_count
-#         FROM ai_call_metrics
-#         GROUP BY month_name
-#         ORDER BY month_name
-#     """)
-
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-
-#         result.append({
-#             "month_name": row[0],
-#             "request_count": row[1]
-#         })
-
-#     cursor.close()
-
-#     return result
-
-# @app.get("/api/clinic-requests")
-# def clinic_requests():
-
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         SELECT
-#             clinic_name,
-#             COUNT(user_request) AS total_requests
-#         FROM ai_call_metrics
-#         GROUP BY clinic_name
-#         ORDER BY total_requests DESC
-#     """)
-
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-
-#         result.append({
-#             "clinic_name": row[0],
-#             "total_requests": row[1]
-#         })
-
-#     cursor.close()
-
-#     return result
-
-# @app.get("/api/request-types")
-# def request_types():
-
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         SELECT
-#             user_request,
-#             COUNT(*) as total
-#         FROM ai_call_metrics
-#         GROUP BY user_request
-#     """)
-
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-
-#         result.append({
-#             "user_request": row[0],
-#             "total": row[1]
-#         })
-
-#     cursor.close()
-
-#     return result
-
-
-
-
-
-
-
-# # @app.get("/api/filter/month/{month}")
-# # def filter_by_month(month: str):
-
-# #     cursor = conn.cursor()
-
-# #     cursor.execute("""
-# #         SELECT
-# #             month_name,
-# #             clinic_name,
-# #             user_request
-# #         FROM ai_call_metrics
-# #         WHERE month_name = %s
-# #     """, (month,))
-
-# #     rows = cursor.fetchall()
-
-# #     result = []
-
-# #     for row in rows:
-
-# #         result.append({
-# #             "month_name": row[0],
-# #             "clinic_name": row[1],
-# #             "user_request": row[2]
-# #         })
-
-# #     cursor.close()
-
-# #     return result
-
-# @app.get("/api/filter/clinic/{clinic}")
-# def filter_by_clinic(clinic: str):
-
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         SELECT
-#             month_name,
-#             clinic_name,
-#             user_request
-#         FROM ai_call_metrics
-#         WHERE clinic_name = %s
-#     """, (clinic,))
-
-#     rows = cursor.fetchall()
-
-#     result = []
-
-#     for row in rows:
-
-#         result.append({
-#             "month_name": row[0],
-#             "clinic_name": row[1],
-#             "user_request": row[2]
-#         })
-
-#     cursor.close()
-
-#     return result
-
-# @app.get("/api/kpi")
-# def kpi_metrics():
-
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         SELECT COUNT(*) FROM ai_call_metrics
-#     """)
-
-#     total_requests = cursor.fetchone()[0]
-
-#     cursor.execute("""
-#         SELECT COUNT(DISTINCT clinic_name)
-#         FROM ai_call_metrics
-#     """)
-
-#     total_clinics = cursor.fetchone()[0]
-
-#     cursor.close()
-
-#     return {
-#         "total_requests": total_requests,
-#         "total_clinics": total_clinics
-#     }

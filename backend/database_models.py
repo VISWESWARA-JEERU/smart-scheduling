@@ -20,7 +20,7 @@ class AicallmetricsCreate(Base):
     call_id: Mapped[int] = mapped_column(Integer)
     clinic_name: Mapped[str] = mapped_column(String)
     call_timestamp: Mapped[DateTime] = mapped_column(DateTime)
-    primary_intent: Mapped[dict] = mapped_column(JSON)
+    primary_intent: Mapped[str] = mapped_column(String)
     secondary_intents: Mapped[dict] = mapped_column(JSON)
     workflow_events:Mapped[list[dict]] = mapped_column(JSON)
     workflow_summary:Mapped[dict] = mapped_column(JSON)

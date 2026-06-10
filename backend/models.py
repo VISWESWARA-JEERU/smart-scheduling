@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date,datetime,dict
-from typing import Dict, Optional
+from typing import Dict,List,Any
 class Aicallmetrics(BaseModel):
     id: int | None = None
     month_name:date
@@ -14,15 +14,17 @@ class AicallmetricsCreate(BaseModel) :
     clinic_name:str
     call_timestamp : datetime
     primary_intent:str
-    secondary_intents:dict | Dict[str, any]
-    detected_intents:dict | Dict[str, any]
-    workflow_events :list[Dict[str, any]]
-    workflow_summary :dict[str,any]
-    completion_data:dict[str,any]
-    blocker_data :dict | Dict[str, any]
+    secondary_intents:dict | Dict[str, Any]
+    detected_intents:dict | Dict[str, Any]
+    workflow_events :List[Dict[str, Any]]
+    workflow_summary :dict[str,Any]
+    completion_data:dict[str,Any]
+    blocker_data :dict | Dict[str, Any]
     final_output :str
     created_at: datetime | None = None
-    transcript:dict| Dict[str, any]
+    transcript:dict| Dict[str, Any]
+    class Config:
+     from_attributes = True
 
 
 

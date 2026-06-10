@@ -13,7 +13,7 @@ const RequestTypeChart = forwardRef(({ data, title="Request Types" }, ref) => {
 
   return (
     // 1. Fixed width typo to make it responsive (w-full + max-width)
-    <div className="w-full max-w-[1000px] rounded-xl bg-white p-5 shadow-card mx-auto">
+    <div className="w-full max-w-[1000px] rounded-xl bg-white p-5 shadow-card mx-auto transition-transform hover:translate-x-3 shadow-lg hover:border border-slate-300">
       <h2 className="mb-1 text-xl font-semibold text-slate-700">
         {title}
       </h2>
