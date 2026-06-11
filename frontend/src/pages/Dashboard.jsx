@@ -5,7 +5,6 @@ import API from "../services/api";
 import "../index.css";
 
 import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
 import KPICards from "../components/KPICards";
 import MonthlyChart from "../charts/MonthlyChart";
 import ClinicChart from "../charts/ClinicChart";
@@ -47,6 +46,10 @@ function Dashboard() {
     "November",
     "December",
   ];
+  const monthLabel = selectedMonth ? monthNames[selectedMonth] : "All Months";
+  const yearLabel = selectedYear ? selectedYear : "All Years";
+
+
 
   useEffect(() => {
     fetchDashboardData();
@@ -56,32 +59,30 @@ function Dashboard() {
     try {
       const monthlyRes = await API.get("/monthly-requests", {
         params: {
-          year: selectedYear,
+          year: selectedYear || undefined,
         },
       });
 
       const clinicRes = await API.get("/clinic-requests", {
         params: {
-          month: selectedMonth,
-          year: selectedYear,
+          month: selectedMonth || undefined,
+          year: selectedYear || undefined,
 
         },
       });
 
+      const params = {
+        month: selectedMonth || undefined,
+        year: selectedYear || undefined,
+        clinic: selectedClinic || undefined,
+      };
+
       const requestTypeRes = await API.get("/request-types", {
-        params: {
-          month: selectedMonth,
-          year: selectedYear,
-          clinic: selectedClinic || undefined,
-        },
+        params,
       });
 
       const kpiRes = await API.get("/kpi", {
-        params: {
-          month: selectedMonth,
-          year: selectedYear,
-          clinic: selectedClinic || undefined,
-        },
+        params,
       });
 
       setMonthlyData(monthlyRes.data);
@@ -123,7 +124,9 @@ function Dashboard() {
       );
     };
 
-    const monthLabel = monthNames[selectedMonth];
+   const monthLabel = selectedMonth ? monthNames[selectedMonth] : "All Months";
+   const yearLabel = selectedYear ? selectedYear : "All Years";
+
 
     const drawTitleAndFilters = () => {
       pdf.setFontSize(20);
@@ -150,7 +153,7 @@ function Dashboard() {
       pdf.text("Clinic", 110, 39);
 
       pdf.setFont("helvetica", "normal");
-      pdf.text(`${monthLabel} ${selectedYear}`, 25, 52);
+      pdf.text(`${monthLabel} ${yearLabel}`, 25, 52);
       pdf.text(selectedClinic || "All Clinics", 110, 52);
     };
 
@@ -303,43 +306,43 @@ function Dashboard() {
       drawFooter();
     }
 
-    pdf.save(`AI_Report_${monthLabel}_${selectedYear}.pdf`);
+    pdf.save(`AI_Report_${monthLabel}_${yearLabel}.pdf`);
   };
 
+  
   return (
     <div className="min-h-screen w-full bg-slate-100">
       <div className="flex min-h-screen w-full">
-        {/* <Sidebar /> */}
 
         <main className="flex-1 p-6 sm:p-7">
           <Navbar />
           <div className="mt-4 mb-6 flex justify-center items-center w-full bg-blue-800">
-           <div className=" flex items-center gap-3 rounded-2xl bg-white p-5 shadow-lg mt-6 mb-6 border border-slate-200 transition-transform hover:-translate-y-1 ">
-            {/* Dashboard Filters */}
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-14">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-                </svg>
-               <div className="flex items-center jusify-between gap-12 w-full">
+            <div className=" flex items-center gap-3 rounded-2xl bg-white p-5 shadow-lg mt-6 mb-6 border border-slate-200 transition-transform hover:-translate-y-1 ">
+              {/* Dashboard Filters */}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-14">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+              </svg>
+              <div className="flex items-center jusify-between gap-12 w-full">
                 <div className="flex flex-col">
-                 
+
                   <label
                     htmlFor="month"
                     className="mb-1 text-sm font-semibold text-slate-600 "
                   >
 
-                    Month 
+                    Month
                   </label>
 
                   <select
                     id="month"
                     value={selectedMonth}
                     onChange={(e) =>
-                      setSelectedMonth(Number(e.target.value))
+                      setSelectedMonth(e.target.value === "" ? "" : Number(e.target.value))
                     }
                     // className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition  focus:ring-2 focus:ring-blue-200 "
+                    className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition  focus:ring-2 focus:ring-blue-200 "
                   >
-                    
+                    <option value="">All Months</option>
                     <option value={1}>January</option>
                     <option value={2}>February</option>
                     <option value={3}>March</option>
@@ -352,15 +355,9 @@ function Dashboard() {
                     <option value={10}>October</option>
                     <option value={11}>November</option>
                     <option value={12}>December</option>
-                      {/* <svg class="w-4 h-4 ms-1.5 -me-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg> */}
+
                   </select>
                 </div>
-
-
-
-
-
 
 
                 <div className="flex flex-col">
@@ -375,53 +372,47 @@ function Dashboard() {
                     id="year"
                     value={selectedYear}
                     onChange={(e) =>
-                      setSelectedYear(Number(e.target.value))
+                      setSelectedYear(e.target.value === "" ? "" : Number(e.target.value))
                     }
                     className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   >
-                    
+                    <option value="">All Years</option>
                     <option value={2026}>2026</option>
                     <option value={2025}>2025</option>
                   </select>
                 </div>
                 <div className="flex flex-col">
-                <label
-                  htmlFor="clinic"
-                  className="mb-1 text-sm font-semibold text-slate-600"
-                >
-                  Clinics
-                </label>
+                  <label
+                    htmlFor="clinic"
+                    className="mb-1 text-sm font-semibold text-slate-600"
+                  >
+                    Clinics
+                  </label>
 
-                <select
-                  id="clinic"
-                  value={selectedClinic}
-                  onChange={(e) => setSelectedClinic(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-                  <option value="">All Clinics</option>
+                  <select
+                    id="clinic"
+                    value={selectedClinic}
+                    onChange={(e) => setSelectedClinic(e.target.value)}
+                    className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  >
+                    <option value="">All Clinics</option>
 
-                  {clinicData.map((clinic) => (
-                    <option
-                      key={clinic.clinic_name}
-                      value={clinic.clinic_name}
-                    >
-                      {clinic.clinic_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="button" className=" rounded-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-base text-m px-4 py-2.5 text-center leading-5
+                    {clinicData.map((clinic) => (
+                      <option
+                        key={clinic.clinic_name}
+                        value={clinic.clinic_name}
+                      >
+                        {clinic.clinic_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="button" className=" rounded-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-base text-m px-4 py-2.5 text-center leading-5
                   onClick={exportPDF}">Export PDF</button>
-              {/* <button
-                
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-green-600"
-              >
-                Export PDF */}
-              {/* </button> */}
-               </div>
+              </div>
             </div>
-          
-   
+
+
           </div>
 
           <div className="mb-6">
@@ -441,8 +432,8 @@ function Dashboard() {
               ref={clinicChartRef}
               data={clinicData}
               selectedClinic={selectedClinic}
-              title={selectedClinic ? `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear} - ${selectedClinic}` : `Clinic Requests - ${monthNames[selectedMonth]} ${selectedYear}`}
-
+              title={selectedClinic ? `Clinic Requests - ${monthLabel} ${yearLabel} - ${selectedClinic}`
+                  : `Clinic Requests - ${monthLabel} ${yearLabel}`}
             />
 
             <div className="lg:col-span-2">
