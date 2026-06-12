@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { Bar } from "react-chartjs-2";
+import { ChartColumnBig } from "lucide-react";
 
 import "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -7,133 +8,189 @@ import { Chart } from "chart.js";
 
 Chart.register(ChartDataLabels);
 
-const ClinicChart = forwardRef(({ data, title = "Clinic Requests" ,selectedClinic}, ref) => {
-  const sortedData = [...(data || [])].sort(
-    (a, b) => b.total_requests - a.total_requests
-  );
-  
-  const ClinicFilteredData = selectedClinic ? sortedData.filter(
-    (item) => item.clinic_name === selectedClinic) : sortedData;
+const ClinicChart = forwardRef(
+  ({ data = [], title = "Clinic Requests", selectedClinic }, ref) => {
+    const sortedData = [...data].sort(
+      (a, b) => b.total_requests - a.total_requests
+    );
 
-  const filteredData = ClinicFilteredData.filter(
-    (item) => item.total_requests >= 10
-  );
+    const clinicFilteredData = selectedClinic
+      ? sortedData.filter((item) => item.clinic_name === selectedClinic)
+      : sortedData;
 
-  return (
-    <div className="h-[580px] w-full rounded-xl bg-white p-5 shadow-card transition-transform hover:-translate-y-3 shadow-lg hover:border border-slate-300">
-      <Bar
-        ref={ref}
-        data={{
-          labels: filteredData.map((item) => item.clinic_name),
+    const filteredData = clinicFilteredData.filter(
+      (item) => item.total_requests >= 10
+    );
 
-          datasets: [
-            {
-              label: "Total Requests",
+    const clinicCount = filteredData.length;
 
-              data: filteredData.map(
-                (item) => item.total_requests
-              ),
+    const maxClinicRequests = Math.max(
+      ...filteredData.map((item) => Number(item.total_requests || 0)),
+      0
+    );
 
-              backgroundColor: [
-                "rgba(243, 103, 9, 0.6)",
-                "rgb(8, 202, 232)",
-                "rgba(21, 250, 13, 0.6)",
-                "rgba(249, 27, 179, 0.94)",
-                "rgba(252, 43, 78, 0.9)",
-              ],
+    const chartWidth =
+      clinicCount <= 1
+        ? "w-[45%]"
+        : clinicCount <= 2
+          ? "w-[60%]"
+          : clinicCount <= 4
+            ? "w-[85%]"
+            : "w-full";
 
-              borderColor: "rgb(11, 162, 250)",
-              borderWidth: 1,
-              borderRadius: 6,
-            },
-          ],
-        }}
-        plugins={[ChartDataLabels]}
-        options={{
-          responsive: true,
-          maintainAspectRatio: false,
+    const chartHeight =
+      clinicCount <= 2 ? "h-[320px]" : "h-[370px]";
 
-          plugins: {
-            legend: {
-              display: true,
-            },
+    return (
+      <div className="h-[460px] w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <ChartColumnBig
+            size={28}
+            className="text-blue-600"
+            strokeWidth={2}
+            color="black"
+          />
 
-            title: {
-              display: true,
-              text: title,
-              color: "black",
-              font: {
-                size: 18,
-                weight: "bold",
-              },
-            },
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        </div>
 
-            datalabels: {
-              anchor: "end",
-              align: "top",
-              color: "black",
-              font: {
-                weight: "bold",
-                size: 16,
-              },
-              formatter: (value) => value,
-            },
+        <div className="flex h-[370px] w-full justify-center px-8">
+          <div className={`${chartHeight} ${chartWidth}`}>
+            <Bar
+              ref={ref}
+              data={{
+                labels: filteredData.map((item) => item.clinic_name),
 
-            tooltip: {
-              enabled: true,
-            },
-          },
+                datasets: [
+                  {
+                    label: "Total Requests",
+                    data: filteredData.map((item) => item.total_requests),
 
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: "Clinics",
-                color: "black",
-                font: {
-                  size: 18,
-                  weight: "bold",
+                    backgroundColor: [
+                      "rgba(249, 115, 22, 0.85)",
+                      "rgba(37, 99, 235, 0.85)",
+                      "rgba(34, 197, 94, 0.85)",
+                      "rgba(236, 72, 153, 0.85)",
+                      "rgba(239, 68, 68, 0.85)",
+                    ],
+
+                    borderWidth: 0,
+                    borderRadius: 8,
+
+                    barPercentage: clinicCount <= 1 ? 0.45 : 0.7,
+                    categoryPercentage: clinicCount <= 1 ? 0.6 : 0.8,
+                    maxBarThickness:
+                      clinicCount <= 1 ? 90 : clinicCount <= 3 ? 110 : 120,
+                  },
+                ],
+              }}
+              plugins={[ChartDataLabels]}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+
+                  title: {
+                    display: false,
+                  },
+
+                  datalabels: {
+                    anchor: "end",
+                    align: "top",
+                    offset: 4,
+                    color: "#020617",
+                    font: {
+                      weight: "bold",
+                      size: 14,
+                    },
+                    formatter: (value) => value,
+                  },
+
+                  tooltip: {
+                    enabled: true,
+                    backgroundColor: "#0f172a",
+                    titleColor: "#ffffff",
+                    bodyColor: "#ffffff",
+                    padding: 12,
+                    cornerRadius: 10,
+                  },
                 },
-              },
 
-              ticks: {
-                autoSkip: false,
-                maxRotation: 30,
-                minRotation: 0,
-                color: "black",
-                font: {
-                  size: 14,
-                  weight: "bold",
+                scales: {
+                  x: {
+                    grid: {
+                      display: false,
+                    },
+
+                    title: {
+                      display: true,
+                      text: "Clinics",
+                      color: "#334155",
+                      font: {
+                        size: 15,
+                        weight: "bold",
+                      },
+                    },
+
+                    ticks: {
+                      autoSkip: false,
+                      maxRotation: clinicCount > 4 ? 20 : 0,
+                      minRotation: 0,
+                      color: "#334155",
+                      font: {
+                        size: 13,
+                        weight: "600",
+                      },
+                    },
+
+                    border: {
+                      color: "#cbd5e1",
+                    },
+                  },
+
+                  y: {
+                    beginAtZero: true,
+                    suggestedMax: maxClinicRequests * 1.15,
+
+                    grid: {
+                      color: "#e2e8f0",
+                      borderDash: [6, 6],
+                    },
+
+                    title: {
+                      display: true,
+                      text: "Number of Requests",
+                      color: "#334155",
+                      font: {
+                        size: 15,
+                        weight: "bold",
+                      },
+                    },
+
+                    ticks: {
+                      color: "#334155",
+                      precision: 0,
+                      font: {
+                        size: 13,
+                      },
+                    },
+
+                    border: {
+                      color: "#cbd5e1",
+                    },
+                  },
                 },
-              },
-            },
-
-            y: {
-              beginAtZero: true,
-
-              title: {
-                display: true,
-                text: "Number of Requests",
-                color: "black",
-                font: {
-                  size: 18,
-                  weight: "bold",
-                },
-              },
-
-              ticks: {
-                stepSize: 500,
-                color: "black",
-                font: {
-                  size: 14,
-                },
-              },
-            },
-          },
-        }}
-      />
-    </div>
-  );
-});
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
 
 export default ClinicChart;
