@@ -1,51 +1,65 @@
-import { useEffect, useRef, useState } from "react";
-import jsPDF from "jspdf";
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Download,
+  MoreVertical,
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  ListFilter,
+  RotateCcw,
+  X,
+  Activity,
+  Clock,
+  AlertCircle,
+} from 'lucide-react';
+// import Sidebar from "../components/layout/Sidebar";
+import Topbar from "../components/layout/Topbar";
 
-import API from "../services/api";
-import "../index.css";
-import { ListFilter, AudioLines, Sun, Moon } from "lucide-react";
+import jsPDF from 'jspdf';
 
-import KPICards from "../components/KPICards";
-import MonthlyChart from "../charts/MonthlyChart";
-import ClinicChart from "../charts/ClinicChart";
-import RequestTypeChart from "../charts/RequestTypeChart";
+import API from '../services/api';
+import KPICards from '../components/KPICards';
+import MonthlyChart from '../charts/MonthlyChart';
+import ClinicChart from '../charts/ClinicChart';
+import RequestTypeChart from '../charts/RequestTypeChart';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [monthlyData, setMonthlyData] = useState([]);
   const [clinicData, setClinicData] = useState([]);
   const [requestTypeData, setRequestTypeData] = useState([]);
   const [kpiData, setKpiData] = useState({});
-  const [selectedClinic, setSelectedClinic] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const currentDate = new Date();
-
-  const [selectedMonth, setSelectedMonth] = useState(
-    currentDate.getMonth() + 1
-  );
-
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
   const monthlyChartRef = useRef(null);
   const clinicChartRef = useRef(null);
   const requestTypeChartRef = useRef(null);
 
-  const monthNames = [
-    "",
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
+  const monthNames = [
+    '',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
   const monthLabel = selectedMonth ? monthNames[selectedMonth] : "All Months";
   const yearLabel = selectedYear ? selectedYear : "All Years";
 
@@ -54,38 +68,60 @@ function Dashboard() {
   }, [selectedMonth, selectedYear, selectedClinic]);
 
   const fetchDashboardData = async () => {
+    setIsLoading(true);
     try {
-      const monthlyRes = await API.get("/monthly-requests", {
-        params: {
-          year: selectedYear || undefined,
-        },
-      });
+      const [monthlyRes, clinicRes, requestTypeRes, kpiRes] = await Promise.all([
+        API.get('/monthly-requests', {
+          params: {
+            year: selectedYear || undefined,
+          },
+        }),
+        API.get('/clinic-requests', {
+          params: {
+            month: selectedMonth || undefined,
+            year: selectedYear || undefined,
+          },
+        }),
+        API.get('/request-types', {
+          params: {
+            month: selectedMonth || undefined,
+            year: selectedYear || undefined,
+            clinic: selectedClinic || undefined,
+          },
+        }),
+        API.get('/kpi', {
+          params: {
+            month: selectedMonth || undefined,
+            year: selectedYear || undefined,
+            clinic: selectedClinic || undefined,
+          },
+        }),
+      ]);
+      const res = await API.get("/analytics/clinic",
+        {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+        }
+      );
+     
 
-      const clinicRes = await API.get("/clinic-requests", {
-        params: {
-          month: selectedMonth || undefined,
-          year: selectedYear || undefined,
-        },
-      });
 
-      const params = {
-        month: selectedMonth || undefined,
-        year: selectedYear || undefined,
-        clinic: selectedClinic || undefined,
-      };
-
-      const requestTypeRes = await API.get("/request-types", { params });
-      const kpiRes = await API.get("/kpi", { params });
 
       setMonthlyData(monthlyRes.data);
       setClinicData(clinicRes.data);
       setRequestTypeData(requestTypeRes.data);
       setKpiData(kpiRes.data);
+
+      setLastUpdated(new Date());
+
     } catch (error) {
-      console.log(error);
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
   const exportPDF = () => {
     const pdf = new jsPDF("p", "mm", "a4");
 
@@ -237,14 +273,14 @@ function Dashboard() {
     drawBorder();
     drawTitleAndFilters();
     drawKPIs();
-    
+
     if (clinicChartRef.current) {
       const clinicImage = clinicChartRef.current.toBase64Image();
 
       pdf.setTextColor(15, 23, 42);
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
-      pdf.text(`Clinic Requests Chart - ${selectedClinic}`, 20, 105);
+      pdf.text(`Clinic Requests Chart - ${selectedClinic || "All Clinics"}`, 20, 105);
 
       addProportionalImage(clinicImage, 20, 118, 170, 200);
     }
@@ -283,7 +319,7 @@ function Dashboard() {
 
         currentY += actualHeight + 20;
       }
-
+      
       if (monthlyChartRef.current) {
         pdf.setFontSize(16);
         pdf.setTextColor(15, 23, 42);
@@ -306,250 +342,271 @@ function Dashboard() {
     pdf.save(`AI_Report_${monthLabel}_${yearLabel}.pdf`);
   };
 
+
+
+
+
+
+
+  const uniqueClinics = [...new Set(clinicData.map((item) => item.clinic_name))];
+
+  const handleClearFilters = () => {
+    setSelectedMonth(currentDate.getMonth() + 1);
+    setSelectedYear(currentDate.getFullYear());
+    setSelectedClinic('');
+  };
+
+  const getFormattedTime = () => {
+    return lastUpdated.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
-    <div
-      className={
-        darkMode
-          ? "min-h-screen w-full bg-slate-950 text-white"
-          : "min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-slate-900"
-      }
-    >
-      <main className="min-h-screen w-full p-5 sm:p-7">
-        {/* Header */}
-        <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
-              <AudioLines strokeWidth={1} />
-            </div>
+    <div className="flex min-h-screen bg-slate-50">
+      {/* <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} /> */}
 
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                AI Voice Agent Metrics
-              </h1>
-              <p
-                className={
-                  darkMode
-                    ? "mt-2 text-sm text-slate-300"
-                    : "mt-2 text-sm text-slate-600"
-                }
+      <main className="min-h-screen flex-1 overflow-x-hidden p-5 lg:p-8">
+        <Topbar
+          lastUpdated={lastUpdated}
+          onExportPDF={exportPDF}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+
+        <div className="mt-0 space-y-6">
+          {/* Filters */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-[130px_1fr_1fr_1fr_120px] md:items-end">
+              <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 px-4">
+                <ListFilter size={18} className="text-slate-700" />
+                <span className="font-semibold text-slate-800">Filters</span>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-600">
+                  Month
+                </label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  {monthNames.map((month, index) => (
+                    <option key={index} value={index}>
+                      {month || "All Months"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-600">
+                  Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  {[2022, 2023, 2024, 2025, 2026].map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-600">
+                  Clinic
+                </label>
+                <select
+                  value={selectedClinic}
+                  onChange={(e) => setSelectedClinic(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  <option value="">All Clinics</option>
+                  {uniqueClinics.map((clinic) => (
+                    <option key={clinic} value={clinic}>
+                      {clinic}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleClearFilters}
+                className="flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Track and analyze AI voice agent performance across all clinics.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Light/Dark Toggle */}
-            <button
-              type="button"
-              onClick={() => setDarkMode(!darkMode)}
-              className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm"
-            >
-              <Sun
-                size={16}
-                className={darkMode ? "text-slate-400" : "text-yellow-500"}
-              />
-
-              <span
-                className={
-                  darkMode
-                    ? "relative h-6 w-11 rounded-full bg-blue-600"
-                    : "relative h-6 w-11 rounded-full bg-slate-300"
-                }
-              >
-                <span
-                  className={
-                    darkMode
-                      ? "absolute right-1 top-1 h-4 w-4 rounded-full bg-white"
-                      : "absolute left-1 top-1 h-4 w-4 rounded-full bg-white"
-                  }
-                />
-              </span>
-
-              <Moon
-                size={16}
-                className={darkMode ? "text-blue-500" : "text-slate-400"}
-              />
-            </button>
-
-            {/* <p
-              className={
-                darkMode
-                  ? "text-sm text-slate-300"
-                  : "text-sm text-slate-600"
-              }
-            >
-              Last updated: 2 min ago
-            </p> */}
-
-            <button
-              type="button"
-              onClick={exportPDF}
-              className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl  focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-full text-sm px-4 py-2.5 text-center leading-5"
-              >
-              Export PDF
-            </button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div
-          className={
-            darkMode
-              ? "w-6/8 mb-6 rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-sm"
-              : "w-6/8 mb-6 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur"
-          }
-        >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[70px_1fr_1fr_1fr] items-center">
-            <div className={
-              darkMode
-                ? "h-18 w-11 flex items-center justify-center rounded-xl  border-none"
-                : "h-18 w-11 flex items-center justify-center rounded-xl  border-none"
-            }
-            >
-              <ListFilter size={30} strokeWidth={1.75} className={darkMode ? "text-slate-400" : "text-white-600"}
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <label
-                htmlFor="month"
-                className={
-                  darkMode
-                    ? "mb-2 text-sm font-semibold text-slate-300"
-                    : "mb-2 text-sm font-semibold text-slate-600"
-                }
-              >
-                Month
-              </label>
-
-              <select
-                id="month"
-                value={selectedMonth}
-                onChange={(e) =>
-                  setSelectedMonth(
-                    e.target.value === "" ? "" : Number(e.target.value)
-                  )
-                }
-                className={
-                  darkMode
-                    ? "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-900"
-                    : "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                }
-              >
-                <option value="">All Months</option>
-                <option value={1}>January</option>
-                <option value={2}>February</option>
-                <option value={3}>March</option>
-                <option value={4}>April</option>
-                <option value={5}>May</option>
-                <option value={6}>June</option>
-                <option value={7}>July</option>
-                <option value={8}>August</option>
-                <option value={9}>September</option>
-                <option value={10}>October</option>
-                <option value={11}>November</option>
-                <option value={12}>December</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col">
-              <label
-                htmlFor="year"
-                className={
-                  darkMode
-                    ? "mb-2 text-sm font-semibold text-slate-300"
-                    : "mb-2 text-sm font-semibold text-slate-600"
-                }
-              >
-                Year
-              </label>
-
-              <select
-                id="year"
-                value={selectedYear}
-                onChange={(e) =>
-                  setSelectedYear(
-                    e.target.value === "" ? "" : Number(e.target.value)
-                  )
-                }
-                className={
-                  darkMode
-                    ? "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-900"
-                    : "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                }
-              >
-                <option value="">All Years</option>
-                <option value={2026}>2026</option>
-                <option value={2025}>2025</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col">
-              <label
-                htmlFor="clinic"
-                className={
-                  darkMode
-                    ? "mb-2 text-sm font-semibold text-slate-300"
-                    : "mb-2 text-sm font-semibold text-slate-600"
-                }
-              >
-                Clinic
-              </label>
-
-              <select
-                id="clinic"
-                value={selectedClinic}
-                onChange={(e) => setSelectedClinic(e.target.value)}
-                className={
-                  darkMode
-                    ? "w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-900"
-                    : "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                }
-              >
-                <option value="">All Clinics</option>
-
-                {clinicData.map((clinic) => (
-                  <option key={clinic.clinic_name} value={clinic.clinic_name}>
-                    {clinic.clinic_name}
-                  </option>
-                ))}
-              </select>
+                <RotateCcw size={16} />
+                Clear All
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* KPI Cards */}
-        <div className="mb-6">
+          {/* KPI */}
           <KPICards data={kpiData} requestData={requestTypeData} />
-        </div>
 
-        {/* Charts */}
-        <div className="space-y-6">
-          <ClinicChart
-            ref={clinicChartRef}
-            data={clinicData}
-            selectedClinic={selectedClinic}
-            title={
-              selectedClinic
-                ? `Clinic Requests - ${monthLabel} ${yearLabel} - ${selectedClinic}`
-                : `Clinic Requests - ${monthLabel} ${yearLabel}`
-            }
-          />
+          {/* Charts */}
+          {isLoading ? (
+            <div className="flex h-96 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+              <p className="text-slate-600">Loading dashboard data...</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Building2 size={22} className="text-slate-900" />
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Clinic Requests - {monthNames[selectedMonth] || "All Months"} {selectedYear}
+                        </h3>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Total number of AI voice agent requests handled by each clinic.
+                      </p>
+                    </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <RequestTypeChart
-              ref={requestTypeChartRef}
-              data={requestTypeData}
-              title={`Request Types - ${selectedClinic || "All Clinics"}`}
-            />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate("/analytics/clinic")}
+                        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                      >
+                        View Details <ArrowRight size={14} className="inline" />
+                      </button>
+                      <MoreVertical size={20} className="text-slate-500" />
+                    </div>
+                  </div>
 
-            <MonthlyChart ref={monthlyChartRef} data={monthlyData} />
-          </div>
+                  <ClinicChart
+                    ref={clinicChartRef}
+                    data={clinicData}
+                    title=""
+                    selectedClinic={selectedClinic}
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CalendarDays size={22} className="text-slate-900" />
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Monthly Requests - {selectedYear}
+                        </h3>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Monthly request trends for the selected year and clinic filter.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate("analytics/monthly-requests")}
+                        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                      >
+                        View Details <ArrowRight size={14} className="inline" />
+                      </button>
+                      <MoreVertical size={20} className="text-slate-500" />
+                    </div>
+                  </div>
+
+                  <MonthlyChart ref={monthlyChartRef} data={monthlyData} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        Request Types - {selectedClinic || "All Clinics"}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Breaks down request categories by type.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => navigate("/analytics/request-types")}
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                    >
+                      View Details →
+                    </button>
+                  </div>
+
+                  <RequestTypeChart
+                    ref={requestTypeChartRef}
+                    data={requestTypeData}
+                    title=""
+                  />
+                </div>
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Request Type Insights
+                  </h3>
+
+                  <p className="mt-4 text-sm leading-6 text-slate-600">
+                    This chart shows the distribution of requests handled by the AI Voice Agent
+                    across all clinics. It helps identify the most common user intents and
+                    service categories.
+                  </p>
+
+                  <div className="mt-5 space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-slate-900">
+                        Most Requested Services
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Identify which request types generate the highest call volume.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-slate-900">
+                        Operational Insights
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Understand user behavior and optimize workflows for frequently
+                        requested services.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-slate-900">
+                        Performance Monitoring
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Track changes in request distribution over time using filters for
+                        month, year, and clinic.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-xl bg-white p-4">
+                    <h4 className="font-semibold text-slate-900">
+                      View Details
+                    </h4>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Access detailed analytics including request counts, percentages,
+                      clinic-wise breakdowns, and historical trends.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-center text-sm text-slate-500">
+                All data is displayed based on selected filters. Data is refreshed automatically.
+              </p>
+            </>
+          )}
         </div>
       </main>
     </div>
   );
 }
-
-export default Dashboard;
+export default Dashboard; 

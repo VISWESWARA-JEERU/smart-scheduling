@@ -11,7 +11,7 @@ load_dotenv()
 # port=os.getenv("DB_PORT")
 
 # db_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-# #db_url = 'postgresql://postgres:1234@localhost:5432/ai_metrics_db'
+# # #db_url = 'postgresql://postgres:1234@localhost:5432/ai_metrics_db'
 
 #deployment url is set in the environment variable DATABASE_URL in vercel dashboard
 

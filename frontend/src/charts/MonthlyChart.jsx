@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { Bar } from "react-chartjs-2";
 import { Calendar1 } from "lucide-react";
+
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import "chart.js/auto";
 import { Chart } from "chart.js";
@@ -8,153 +9,177 @@ import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
 const MonthlyChart = forwardRef(({ data = [] }, ref) => {
-  const maxMonthlyRequests = Math.max(...data.map((item) => Number(item.request_count || 0)), 0);
+  const maxMonthlyRequests = Math.max(
+    ...data.map((item) => Number(item.request_count || 0)),
+    0
+  );
+
+  const calculateStepSize = (maxValue) => {
+    if (maxValue <= 10) return 1;
+    if (maxValue <= 50) return 10;
+    if (maxValue <= 100) return 20;
+    if (maxValue <= 500) return 50;
+    if (maxValue <= 1000) return 100;
+    if (maxValue <= 5000) return 500;
+    if (maxValue <= 10000) return 1000;
+
+    return Math.ceil(maxValue / 5 / 1000) * 1000;
+  };
+
+  const stepSize = calculateStepSize(maxMonthlyRequests || 1);
+
+  const suggestedMax =
+    Math.ceil((maxMonthlyRequests || stepSize) / stepSize) * stepSize +
+    stepSize;
+
+  const monthCount = data.length || 1;
+
+  const tickRotation = monthCount > 8 ? 35 : 0;
+  const tickFontSize = monthCount > 8 ? 12 : 14;
+
   return (
-    <div className="h-[460px] w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-          <Calendar1 size={35} color="black" strokeWidth={2.25} absoluteStrokeWidth />
-        </div>
+    <div className="h-[550px] w-full">
+      <Bar
+        ref={ref}
+        data={{
+          labels: data.map((item) => item.month_name),
 
-        <h2 className="text-lg font-bold text-slate-900">
-          Monthly Requests
-        </h2>
-      </div>
+          datasets: [
+            {
+              label: "Requests",
+              data: data.map((item) => item.request_count),
+              backgroundColor: "#2563EB",
+              hoverBackgroundColor: "#1D4ED8",
+              borderRadius: 8,
+              barPercentage: monthCount >= 10 ? 0.6 : 0.5,
+              categoryPercentage: monthCount >= 10 ? 0.75 : 0.6,
+              maxBarThickness: monthCount >= 10 ? 55 : 120,
+            },
+          ],
+        }}
+        plugins={[ChartDataLabels]}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
 
-      <div className="h-[370px] w-full">
-        <Bar
-          ref={ref}
-          data={{
-            labels: data.map((item) => item.month_name),
+          layout: {
+            padding: {
+              top: 24,
+              right: 16,
+              bottom: monthCount > 8 ? 35 : 10,
+              left: 8,
+            },
+          },
 
-            datasets: [
-              {
-                label: "Requests",
+          plugins: {
+            legend: {
+              display: false,
+            },
 
-                data: data.map((item) => item.request_count),
+            title: {
+              display: false,
+            },
 
-                backgroundColor: "#2563EB",
+            tooltip: {
+              enabled: true,
+              backgroundColor: "#0f172a",
+              titleColor: "#ffffff",
+              bodyColor: "#ffffff",
+              padding: 12,
+              cornerRadius: 10,
+            },
 
-                hoverBackgroundColor: "#1D4ED8",
-
-                borderRadius: 8,
-
-                // barThickness: 40,
-
-                maxBarThickness: 170,
+            datalabels: {
+              anchor: "end",
+              align: "top",
+              offset: 4,
+              color: "black",
+              font: {
+                weight: "bold",
+                size: 17,
               },
-            ],
-          }}
-          plugins={[ChartDataLabels]}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
+              formatter: (value) => {
+                if (value > 0) return value >= 1000 ? `${value / 1000}k` : value;
+                return "";
+              },
+            },
+          },
 
-            plugins: {
-              legend: {
+          scales: {
+            x: {
+              grid: {
                 display: false,
               },
 
               title: {
-                display: false,
-              },
-
-              tooltip: {
-                enabled: true,
-                backgroundColor: "#0f172a",
-                titleColor: "#ffffff",
-                bodyColor: "#ffffff",
-                padding: 12,
-                cornerRadius: 10,
-              },
-
-              datalabels: {
-                anchor: "end",
-                align: "top",
-                offset: 4,
-
-                color: "#0f172a",
-
+                display: true,
+                text: "Months",
+                color: "black",
+                padding: {
+                  top: 8,
+                },
                 font: {
+                  size: 18,
                   weight: "bold",
-                  size: 17,
                 },
+              },
 
-                formatter: (value) => {
-                  if (value > 0) return value;
-                  return "";
+              ticks: {
+                autoSkip: false,
+                maxRotation: tickRotation,
+                minRotation: tickRotation,
+                color: "black",
+                font: {
+                  size: 14,
+                  weight: "600",
                 },
+              },
+
+              border: {
+                color: "#cbd5e1",
               },
             },
 
-            scales: {
-              x: {
-                grid: {
-                  display: false,
-                },
+            y: {
+              beginAtZero: true,
+              suggestedMax,
 
-                title: {
-                  display: true,
-                  text: "Months",
-                  color: "#334155",
+              grid: {
+                color: "#e2e8f0",
+                borderDash: [5, 5],
+              },
 
-                  font: {
-                    size: 17,
-                    weight: "bold",
-                  },
-                },
-
-                ticks: {
-                  color: "#334155",
-
-                  font: {
-                    size: 17,
-                    weight: "600",
-                  },
-                },
-
-                border: {
-                  color: "#cbd5e1",
+              title: {
+                display: true,
+                text: "Requests",
+                color: "black",
+                font: {
+                  size: 18,
+                  weight: "bold",
                 },
               },
 
-              y: {
-                beginAtZero: true,
-
-                grid: {
-                  color: "#e2e8f0",
-                  borderDash: [5, 5],
+              ticks: {
+                stepSize,
+                color: "black",
+                precision: 0,
+                font: {
+                  size: 15,
+                  // weight:"bold"
                 },
-
-                title: {
-                  display: true,
-                  text: "Requests",
-                  color: "#334155",
-
-                  font: {
-                    size: 17,
-                    weight: "bold",
-                  },
+                callback: (value) => {
+                  if (value >= 1000) return `${value / 1000}k`;
+                  return value;
                 },
+              },
 
-               suggestedMax: maxMonthlyRequests * 1.15,
-
-                ticks: {
-                  color: "#334155",
-                  precision: 0,
-                  font: {
-                    size: 14,
-                  },
-                },
-
-                border: {
-                  color: "#cbd5e1",
-                },
+              border: {
+                color: "#cbd5e1",
               },
             },
-          }}
-        />
-      </div>
+          },
+        }}
+      />
     </div>
   );
 });
